@@ -14,9 +14,15 @@ user_num_feat = ['age','user_enroll_num']
 course_cat_feat = ['course_category']
 course_num_feat = ['course_enroll_num']
 
+"""
+把所有特征塞到一个dataframe类似的东西里
+@params train_feat  
+@params test_feat
+@return all_feat.loc[train_feat.index], all_feat.loc[test_feat.index], act_feat
+"""
 def feat_augment(train_feat, test_feat):
     act_feats = pkl.load(open('act_feats.pkl', 'rb'))
-    all_feat = pd.concat([train_feat, test_feat])
+     all_feat = pd.concat([train_feat, test_feat])
     all_feat_u_mean = all_feat.groupby('username').mean()[act_feats]
     all_feat_u_mean.columns = [x+'#user#mean' for x in all_feat_u_mean.columns]
     all_feat_u_max = all_feat.groupby('username').max()[act_feats]
@@ -43,7 +49,10 @@ def feat_augment(train_feat, test_feat):
         act_feat.append(f+'#course#max')
 
     return all_feat.loc[train_feat.index], all_feat.loc[test_feat.index], act_feat
-
+"""
+数据解析
+@train, test, num_feat, cat_feat
+"""
 def dataparse(train, test, num_feat, cat_feat):
     all_data = pd.concat([train, test])
     feat_dim = 0
@@ -67,7 +76,11 @@ def dataparse(train, test, num_feat, cat_feat):
             data_indice.drop(f, axis=1, inplace=True)
             data_value.drop(f, axis=1, inplace=True) 
     return feat_dim, data_indice, data_value
-
+"""
+加载数据
+@直接读'feat/test_feat.csv'
+@return dfTrain_u, dfTest_u, dfTrain_c, dfTest_c, dfTrain_a, dfTest_a
+"""
 def load_data():
     dfTrain = pd.read_csv('feat/train_feat.csv', index_col=0)
     dfTest = pd.read_csv('feat/test_feat.csv', index_col=0)
@@ -81,7 +94,10 @@ def load_data():
     
     return dfTrain_u, dfTest_u, dfTrain_c, dfTest_c, dfTrain_a, dfTest_a
 
-
+"""
+跑训练和测试 
+@dfTrain_u, dfTest_u, dfTrain_c, dfTest_c, dfTrain_a, dfTest_a, params, act_feat
+"""
 def model_run(dfTrain_u, dfTest_u, dfTrain_c, dfTest_c, dfTrain_a, dfTest_a, params, act_feat):
         
     u_feat_dim, u_data_indice, u_data_value = dataparse(dfTrain_u, dfTest_u, user_num_feat, user_cat_feat)
@@ -109,7 +125,7 @@ def model_run(dfTrain_u, dfTest_u, dfTrain_c, dfTest_c, dfTrain_a, dfTest_a, par
     
     y_train = np.asarray(dfTrain_a['truth'], dtype=int)
     y_test = np.asarray(dfTest_a['truth'], dtype=int)
-    model = CFIN(**params)
+    model = CFIN(**params) # can be change
    
     # generate valid set
     train_num = len(y_train)
@@ -139,6 +155,7 @@ def model_run(dfTrain_u, dfTest_u, dfTrain_c, dfTest_c, dfTrain_a, dfTest_a, par
 dfTrain_u, dfTest_u, dfTrain_c, dfTest_c, dfTrain_a, dfTest_a = load_data()
 dfTrain_a, dfTest_a, act_feat = feat_augment(dfTrain_a, dfTest_a)
 
+#定义json
 params = {
     "embedding_size": 32,
     "attn_size": 16,

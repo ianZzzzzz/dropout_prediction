@@ -56,24 +56,44 @@ all_feat = pd.merge(all_feat, user_enroll_num, left_on = 'username', right_index
 all_feat = pd.merge(all_feat, course_enroll_num, left_on='course_id', right_index=True)
 
 
-#extract user cluster
+#extract user cluster 看着不像用户类型聚类
 user_cluster_id = pkl.load(open('cluster/user_dict','r'))
 cluster_label = np.load('cluster/label_5_10time.npy')
 all_feat['cluster_label'] = [cluster_label[user_cluster_id[u]] for u in all_feat['username']]
 
 
-#extract course category
-courseinfo = pd.read_csv('course_info.csv', index_col='id')
-en_categorys = ['math','physics','electrical', 'computer','foreign language', 'business', 'economics','biology','medicine','literature','philosophy','history','social science', 'art','engineering','education','environment','chemistry']
+#extract course category  读取 course_info.csv 以id列为索引
+course_info = pd.read_csv('course_info.csv', index_col='id')
+# 把课程分成以下几类
+en_categorys = [ 
+      'math',
+      'physics',
+      'electrical', 
+      'computer',
+      'foreign language',
+      'business',
+      'economics',
+      'biology',
+      'medicine',
+      'literature',
+      'philosophy',
+      'history',
+      'social science', 
+      'art',
+      'engineering',
+      'education',
+      'environment',
+      'chemistry'
+      ]
 
-def category_convert(cc):
+def category_convert(cc):  
     if isinstance(cc, str):
         for i, c in zip(range(len(en_categorys)), en_categorys):
             if cc == c:
                 return i+1
     else:
         return 0
-category_dict = courseinfo['category'].to_dict()
+category_dict = course_info['category'].to_dict()
 
 all_feat['course_category'] = [category_convert(category_dict.get(str(x), None)) for x in all_feat['course_id']]
 
