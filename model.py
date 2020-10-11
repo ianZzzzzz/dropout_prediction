@@ -8,20 +8,38 @@ from sklearn.metrics import f1_score
 
 
 class CFIN():
-    def __init__(self, a_feat_size, u_feat_size, c_feat_size, a_field_size, u_field_size, c_field_size,
-                 embedding_size=8,
-                 conv_size = 32,
-                 context_size = 16,
-                 deep_layers=[32, 32], dropout_deep=[0.5, 0.5, 0.5], dropout_attn = [0.5, 0.5],
-                 activation=tf.nn.relu,
-                 attn_size = 16,
-                 epoch=10, batch_size=256,
-                 
-                 learning_rate=0.001, optimizer_type="adam",
-                 batch_norm=0, batch_norm_decay=0.995,
-                 verbose=False, random_seed=2016,
-                 loss_type="logloss", eval_metric=roc_auc_score,
-                 l2_reg=0.0, attn=True):
+    def __init__(
+        self,
+        a_feat_size, 
+        u_feat_size,
+        c_feat_size,
+        a_field_size, 
+        u_field_size, 
+        c_field_size,
+
+        embedding_size=8,
+        conv_size = 32,
+        context_size = 16,
+
+        deep_layers=[32, 32], 
+        dropout_deep=[0.5, 0.5, 0.5], 
+        dropout_attn = [0.5, 0.5],
+        activation=tf.nn.relu,
+        attn_size = 16,
+        epoch=10, 
+        batch_size=256,
+        
+        learning_rate=0.001,
+        optimizer_type="adam",
+        batch_norm=0,
+        batch_norm_decay=0.995,
+        verbose=False, 
+        random_seed=2016,
+        loss_type="logloss", 
+        eval_metric=roc_auc_score,
+        l2_reg=0.0, 
+        attn=True
+    ):
 
         self.a_feat_size = a_feat_size      
         self.u_feat_size = u_feat_size
