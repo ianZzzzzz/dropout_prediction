@@ -79,7 +79,7 @@ class CFIN():
         self.graph = tf.Graph()
         with self.graph.as_default():
             tf.set_random_seed(self.random_seed)
-            
+            # placeholder 占位符 没有什么意义 只是留个坑方便后面实例化 方便调用函数 
             self.u_feat_index = tf.placeholder(tf.int32, shape=[None, None],
                                                  name="u_feat_index")  # None * F
             self.c_feat_index = tf.placeholder(tf.int32, shape=[None, None], name='c_feat_index')
@@ -95,7 +95,8 @@ class CFIN():
             self.train_phase = tf.placeholder(tf.bool, name="train_phase")
             
             self.weights = self._initialize_weights()
-             
+            #-- 以上没卵用 ------------------------------------ 
+            
             # model
             self.a_embeddings = tf.nn.embedding_lookup(self.weights["a_feat_embeddings"], self.a_feat_index)
             self.u_embeddings = tf.nn.embedding_lookup(self.weights['u_feat_embeddings'], self.u_feat_index)
@@ -146,7 +147,8 @@ class CFIN():
             # loss
             self.out = tf.nn.sigmoid(self.out)
             self.loss = tf.losses.log_loss(self.label, self.out)
-            # l2 regularization on weights
+            
+            #  L2正则化 l2 regularization on weights
             if self.l2_reg > 0:
                 for k in self.weights.keys():
                     self.loss += tf.contrib.layers.l2_regularizer(
