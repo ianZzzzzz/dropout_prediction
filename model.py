@@ -73,7 +73,10 @@ class CFIN():
         self.train_result, self.valid_result = [], []
         self._init_graph()
         
-
+    """
+    1.初始化一些接口 用tensorflow里的占位符placeholder来占个坑
+    2.定义模型结构
+    """
     def _init_graph(self):
         
         self.graph = tf.Graph()
@@ -97,23 +100,54 @@ class CFIN():
             self.weights = self._initialize_weights()
             #-- 以上没卵用 ------------------------------------ 
             
-            # model
+            # model 
+            # embedding_lookup 函数的用法主要是选取一个张量里面索引对应的元素。
+            # tf.nn.embedding_lookup（tensor, id）
+            #                       tensor就是输入张量
+            #                       id就是张量对应的索引
             self.a_embeddings = tf.nn.embedding_lookup(self.weights["a_feat_embeddings"], self.a_feat_index)
             self.u_embeddings = tf.nn.embedding_lookup(self.weights['u_feat_embeddings'], self.u_feat_index)
             self.c_embeddings = tf.nn.embedding_lookup(self.weights['c_feat_embeddings'], self.c_feat_index)
-                       
+            # reshape
+            a_feat_value = tf.reshape(self.a_feat_value, shape=[-1, self.a_field_size, 1])  #原来是 uac排列     
             u_feat_value = tf.reshape(self.u_feat_value, shape=[-1, self.u_field_size, 1])
             c_feat_value = tf.reshape(self.c_feat_value, shape=[-1, self.c_field_size, 1])
-            a_feat_value = tf.reshape(self.a_feat_value, shape=[-1, self.a_field_size, 1])
+            # 相乘
+            self.a_embeddings = tf.multiply(self.a_embeddings, a_feat_value)  #原来是cua排列
             self.c_embeddings = tf.multiply(self.c_embeddings, c_feat_value)
             self.u_embeddings = tf.multiply(self.u_embeddings, u_feat_value)
-            self.a_embeddings = tf.multiply(self.a_embeddings, a_feat_value)
+            # 知识补充 BN:Batch Normalization
+            # 将训练数据归一化的思想移植到网络隐含层的输入上：
+            # 原始数据经过一层非线性的激活函数后 其原先的均匀分布会被打破
+            # Google 将这一现象总结为 Internal Covariate Shift，简称 ICS.
+            # 为了 提升训练速度 解决梯度爆炸和消失 
+            # 我们添加一个bn层使每一层网络的输入都是均匀分布的数据 
+
+            #知识补充 归一化方法 常用两类 
+            # 1 去直流分量（我的理解） 减去最小值or均值 
+            # 2 log 或 tan 变换 （会损失数据
+
             if self.batch_norm:
-                self.a_embeddings = self.batch_norm_layer(self.a_embeddings, train_phase=self.train_phase, scope_bn='bn_conv')
-            self.a_embeddings = tf.nn.conv1d(self.a_embeddings, self.weights['a_conv_filter'], stride=5, padding='VALID',data_format='NWC') + self.weights['a_conv_bias']
-            """
+                self.a_embeddings = self.batch_norm_layer(
+                    self.a_embeddings, 
+                    train_phase=self.train_phase, 
+                    scope_bn='bn_conv' # bn操作可以在1*1卷积层上进行 （我觉得其它大小也行
+                    )
+            self.a_embeddings = tf.nn.conv1d(
+                                            self.a_embeddings, 
+                                            self.weights['a_conv_filter'], 
+                                            stride=5, 
+                                            padding='VALID',
+                                            data_format='NWC'
+                                            ) 
+                                            + self.weights['a_conv_bias']
+            """ 为什么要写这个？以下
             if self.batch_norm:
-                self.a_embeddings = self.batch_norm_layer(self.a_embeddings, train_phase=self.train_phase, scope_bn='bn_conv')
+                self.a_embeddings = self.batch_norm_layer(
+                    self.a_embeddings, 
+                    train_phase=self.train_phase, 
+                    scope_bn='bn_conv'
+                    )
             """
             self.a_embeddings = tf.nn.relu(self.a_embeddings)
             self.uc_embeddings = tf.concat([self.u_embeddings, self.c_embeddings], axis=1)
