@@ -152,12 +152,39 @@ class CFIN():
             self.a_embeddings = tf.nn.relu(self.a_embeddings)
             self.uc_embeddings = tf.concat([self.u_embeddings, self.c_embeddings], axis=1)
             
-            self.uc_inter = tf.nn.relu(tf.matmul(tf.reshape(self.uc_embeddings, shape=[-1, (self.u_field_size+self.c_field_size)*self.embedding_size]), self.weights['ctx_pool_weight'])+self.weights['ctx_pool_bias'])
+            self.uc_inter = tf.nn.relu(
+                tf.matmul(
+                    tf.reshape(
+                        self.uc_embeddings, 
+                        shape = [-1, ( self.u_field_size + self.c_field_size ) *self.embedding_size ] ), 
+                        self.weights['ctx_pool_weight']) + self.weights['ctx_pool_bias']
+                        )
 
-            self.uca_inter = tf.concat([tf.tile(tf.expand_dims(self.uc_inter, 1), [1,self.a_field_size//5,1]), self.a_embeddings], 2)
+            self.uca_inter = tf.concat
+            (
+                [
+                    tf.tile
+                    ( 
+                        tf.expand_dims(self.uc_inter, 1), 
+                        [1 , self.a_field_size//5 , 1]
+                    ), 
+                    self.a_embeddings
+                ], 
+                2
+            )
             
-            self.attn_logit = tf.nn.relu(tf.matmul(tf.reshape(self.uca_inter, shape=[-1, self.conv_size + self.context_size]), self.weights['attn_out_1']) + self.weights['attn_bias_1'])
-            self.attn_w = tf.nn.softmax(tf.reshape(tf.matmul(self.attn_logit, self.weights['attn_out']), shape=[-1, self.a_field_size//5]))
+            self.attn_logit = tf.nn.relu(
+                tf.matmul(
+                    tf.reshape(
+                        self.uca_inter, 
+                        shape=[-1, self.conv_size + self.context_size]), 
+                        self.weights['attn_out_1']) + self.weights['attn_bias_1'])
+            self.attn_w = tf.nn.softmax(
+                tf.reshape(
+                    tf.matmul(
+                        self.attn_logit, 
+                        self.weights['attn_out']), 
+                        shape=[-1, self.a_field_size//5]))
             if self.attn_enable:
                 self.a_weight_emb = tf.multiply(tf.expand_dims(self.attn_w,2), self.a_embeddings)
             else:
