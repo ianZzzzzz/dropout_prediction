@@ -1,3 +1,9 @@
+"""
+c:course
+u:user
+a?
+
+"""
 import numpy as np
 import tensorflow as tf
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -77,6 +83,11 @@ class CFIN():
     1.初始化一些接口 用tensorflow里的占位符placeholder来占个坑
     2.定义模型结构
     """
+    """
+    图指的是论文里建立了用户和课程间的连接图
+    使用DeepWalk算法
+    计算用户间余弦相似度 把相似度大于0.8的用户视为朋友
+    """
     def _init_graph(self):
         
         self.graph = tf.Graph()
@@ -98,7 +109,7 @@ class CFIN():
             self.train_phase = tf.placeholder(tf.bool, name="train_phase")
             
             self.weights = self._initialize_weights()
-            #-- 以上没卵用 ------------------------------------ 
+            #-- a待查明 ------------------------------------ 
             
             # model 
             # embedding_lookup 函数的用法主要是选取一个张量里面索引对应的元素。
@@ -131,14 +142,14 @@ class CFIN():
                 self.a_embeddings = self.batch_norm_layer(
                     self.a_embeddings, 
                     train_phase=self.train_phase, 
-                    scope_bn='bn_conv' # bn操作可以在1*1卷积层上进行 （我觉得其它大小也行
+                    scope_bn='bn_conv' # bn操作可以在1*1卷积层上进行 （我觉得其它大小也行v
                     )
             self.a_embeddings = tf.nn.conv1d(
                                             self.a_embeddings, 
                                             self.weights['a_conv_filter'], 
                                             stride=5, 
                                             padding='VALID',
-                                            data_format='NWC'
+                                            data_format='NWC' # 这是什么
                                             ) 
                                             + self.weights['a_conv_bias']
             """ 为什么要写这个？以下
@@ -196,7 +207,7 @@ class CFIN():
             #self.y_deep = tf.reshape(deep_input, shape=[-1,  self.conv_size])
             self.y_deep = deep_input
             self.y_deep = tf.nn.dropout(self.y_deep, self.dropout_keep_deep[0])
-            for i in range(0, len(self.deep_layers)):
+            for i in range(0, len(self.deep_layers)):  # deep_layers = （32，32）
                 self.y_deep = tf.add(tf.matmul(self.y_deep, self.weights["layer_%d" %i]), self.weights["bias_%d"%i])
                 if self.batch_norm:
                     self.y_deep = self.batch_norm_layer(self.y_deep, train_phase=self.train_phase, scope_bn="bn_%d" %i) 
@@ -207,9 +218,12 @@ class CFIN():
 
             # loss
             self.out = tf.nn.sigmoid(self.out)
-            self.loss = tf.losses.log_loss(self.label, self.out)
-            
+            self.loss = tf.losses.log_loss(self.label, self.out) 
+
+# 论文改进： 阐述选择logloss和sigmoid 的原因 以及其他函数的不同
+ 
             #  L2正则化 l2 regularization on weights
+ 
             if self.l2_reg > 0:
                 for k in self.weights.keys():
                     self.loss += tf.contrib.layers.l2_regularizer(
@@ -261,7 +275,10 @@ class CFIN():
             tf.random_normal([self.c_feat_size, self.embedding_size], 0.0, 0.1),
             name="c_feature_embeddings")  # feature_size * K
          
-        u_pool_w, u_pool_b = self._init_layer_weight((self.u_field_size+self.c_field_size)*self.embedding_size, self.context_size)
+        u_pool_w, u_pool_b = self._init_layer_weight(
+            (self.u_field_size+self.c_field_size) * self.embedding_size, 
+                self.context_size
+                )
         
         weights['ctx_pool_weight'] = tf.Variable(u_pool_w, name='ctx_pool_weight', dtype=np.float32)
         
