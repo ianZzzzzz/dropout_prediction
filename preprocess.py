@@ -1,3 +1,10 @@
+"""
+@ 'train_features.csv' 'test_features.csv'
+@ 提取  X（u,c）
+    提取用户年龄、性别、教育水平、集群、
+    提取课程类别
+@ 'train_feat.csv' 'test_feat.csv'
+"""
 import pandas as pd
 import numpy as np
 import pickle as pkl
@@ -56,7 +63,7 @@ all_feat = pd.merge(all_feat, user_enroll_num, left_on = 'username', right_index
 all_feat = pd.merge(all_feat, course_enroll_num, left_on='course_id', right_index=True)
 
 
-#extract user cluster 看着不像用户类型聚类
+#extract user cluster 用户集群 
 user_cluster_id = pkl.load(open('cluster/user_dict','r'))
 cluster_label = np.load('cluster/label_5_10time.npy')
 all_feat['cluster_label'] = [cluster_label[user_cluster_id[u]] for u in all_feat['username']]
@@ -105,9 +112,13 @@ num_feats = act_feats + ['age','course_enroll_num','user_enroll_num']
 scaler= StandardScaler()
 newX = scaler.fit_transform(all_feat[num_feats])
 print(newX.shape)
+
 for i, n_f in enumerate(num_feats):
     all_feat[n_f] = newX[:,i]   
 
+
+
+#写入csv文件
 all_feat.loc[train_feat.index].to_csv('train_feat.csv')
 all_feat.loc[test_feat.index].to_csv('test_feat.csv')
 
