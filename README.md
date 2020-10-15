@@ -1,7 +1,6 @@
 20201015 郑义恒 zhengyh186@gmail.com
 我根据论文内容对代码做了相应标注:
-    1.论文中X(u,c)的原始行为数据在preprocess.py 中被提取 X^不在此文件中处理
-    2.
+    1.论文中Z(u,c)的用户和课程信息在preprocess.py 中被提取
 
 This is the code for dropout prediction in our AAAI'19 paper:
 

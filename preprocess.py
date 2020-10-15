@@ -1,6 +1,6 @@
 """
 @ 'train_features.csv' 'test_features.csv'
-@ 提取  X（u,c）
+@ 提取  Z（u,c）
     提取用户年龄、性别、教育水平、集群、
     提取课程类别
 @ 'train_feat.csv' 'test_feat.csv'
