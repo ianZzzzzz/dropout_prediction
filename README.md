@@ -1,6 +1,13 @@
+20201015 郑义恒 zhengyh186@gmail.com
+我根据论文内容对代码做了相应标注:
+    1.论文中X(u,c)的原始行为数据在preprocess.py 中被提取 X^不在此文件中处理
+    2.
+
 This is the code for dropout prediction in our AAAI'19 paper:
 
 Wenzheng Feng, Jie Tang, Tracy Xiao Liu, Shuhuai Zhang, Jian Guan. [Understanding Dropouts in MOOCs](http://keg.cs.tsinghua.edu.cn/jietang/publications/AAAI19-Feng-dropout-moocs.pdf). In Proceedings of the 33rd AAAI Conference on Artificial Intelligence (AAAI'19).
+
+
 
 ## How to run
 
