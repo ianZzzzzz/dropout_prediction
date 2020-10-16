@@ -32,15 +32,26 @@ session_enroll = all_log[['session_id']].drop_duplicates()
 session_num = all_log.groupby('enroll_id').count()
 all_num['session#count'] = session_num['session_id']
 #--------------------------------------------------------------------------------------------
-
+# 从最原始的log文件中 将各类action分离出来
 for a in video_action + problem_action + forum_action + click_action + close_action:
+    
     action_ = (all_log['action'] == a).astype(int)
     all_log[a+'#num'] = action_
     action_num = all_log.groupby('enroll_id').sum()[[a+'#num']]
+    # 原来的all_num中只统计了每个注册号所有的action数
+    # 此处将各类action分离出来再以新一列的方式添加到all_num里
     all_num = pd.merge(all_num, action_num, left_index=True, right_index=True)
+#--------------------------------------------------------------------------------------------
+# 给all_num 加上了辍学标签 all_truth
 all_num = pd.merge(all_num, all_truth, left_index=True, right_index=True)
+#--------------------------------------------------------------------------------------------
+# 此处要提取用户和课程的对应关系 其实这里存在冗余 
+# 一个唯一的注册号就代表一对course_id<->username
+# 只保留注册号其实就够了
 enroll_info = all_log[['username','course_id','enroll_id']].drop_duplicates()
 enroll_info.index = enroll_info['enroll_id']
+#--------------------------------------------------------------------------------------------
+
 del enroll_info['enroll_id']
 all_num = pd.merge(all_num, enroll_info, left_index=True, right_index=True)
 all_num.loc[test_enroll].to_csv('test_features.csv')

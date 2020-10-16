@@ -52,6 +52,7 @@ def gender_convert(g):
 all_feat['gender'] = [gender_convert(user_gender.get(int(u),None)) for u in all_feat['username']]
 
 user_edu = user_profile['education'].to_dict()
+#存疑
 def edu_convert(x):
     edus = ["Bachelor's","High", "Master's", "Primary", "Middle","Associate","Doctorate"]
     #if x == None or or math.isnan(x):
@@ -62,22 +63,24 @@ def edu_convert(x):
     return ii+1
 
 all_feat['education'] = [edu_convert(user_edu.get(int(u), None)) for u in all_feat['username']]
-
+#-----------------------------------------------------------------------------------------------------------
+# 计算每个用户名下有多少门课程
 user_enroll_num = all_feat.groupby('username').count()[['course_id']]
+# 计算每门课程下有多少名用户
 course_enroll_num = all_feat.groupby('course_id').count()[['username']]
-
+# 写列名
 user_enroll_num.columns = ['user_enroll_num']
 course_enroll_num.columns = ['course_enroll_num']
-
+# 合并到all_feat
 all_feat = pd.merge(all_feat, user_enroll_num, left_on = 'username', right_index = True)
 all_feat = pd.merge(all_feat, course_enroll_num, left_on='course_id', right_index=True)
-
+#--------------------------------------------------------------------------------------------
+#待解释
 
 #extract user cluster 用户集群 
 user_cluster_id = pkl.load(open('cluster/user_dict','r'))
 cluster_label = np.load('cluster/label_5_10time.npy')
 all_feat['cluster_label'] = [cluster_label[user_cluster_id[u]] for u in all_feat['username']]
-
 
 #extract course category  读取 course_info.csv 以id列为索引
 course_info = pd.read_csv('course_info.csv', index_col='id')
@@ -102,7 +105,6 @@ en_categorys = [
       'environment',
       'chemistry'
       ]
-
 def category_convert(cc):  
     if isinstance(cc, str):
         for i, c in zip(range(len(en_categorys)), en_categorys):
