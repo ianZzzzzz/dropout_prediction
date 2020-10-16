@@ -14,11 +14,16 @@ from sklearn.preprocessing import StandardScaler
 train_feat= pd.read_csv('train_features.csv', index_col=0)
 test_feat= pd.read_csv('test_features.csv', index_col=0)
 all_feat = pd.concat([train_feat, test_feat])
-
+# 用户信息
 user_profile = pd.read_csv('user_info.csv', index_col='user_id')
-
 # extract user age
 birth_year = user_profile['birth'].to_dict()
+"""
+@ birth_year
+@ 对于用户信息里记录的小于十岁或大于七十岁的用户 统一归为0岁 
+    改进时可以做一些调整
+@ return age
+"""
 def age_convert(y):
     if y == None or math.isnan(y):
         return 0
@@ -26,10 +31,16 @@ def age_convert(y):
     if a> 70 or a< 10:
         a = 0
     return a
-all_feat['age'] = [age_convert(birth_year.get(int(u),None)) for u in all_feat['username']]
-
+# 此处get 是什么用法？为什么要用for？
+all_feat['age'] = [age_convert( birth_year.get( int(u) ,None) ) for u in all_feat['username']]
 # extract user gender
 user_gender = user_profile['gender'].to_dict()
+"""
+@ user_gender
+@ 女 return 1 
+@ 男 return 2
+@ 未知 return 0
+"""
 def gender_convert(g):
     if g == 'm':
         return 1
@@ -37,8 +48,7 @@ def gender_convert(g):
         return 2
     else:
         return 0
-
-
+# 疑问同上
 all_feat['gender'] = [gender_convert(user_gender.get(int(u),None)) for u in all_feat['username']]
 
 user_edu = user_profile['education'].to_dict()
