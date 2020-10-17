@@ -31,7 +31,7 @@ def age_convert(y):
     if a> 70 or a< 10:
         a = 0
     return a
-# 此处get 是什么用法？为什么要用for？
+# 此处get取值 
 all_feat['age'] = [age_convert( birth_year.get( int(u) ,None) ) for u in all_feat['username']]
 # extract user gender
 user_gender = user_profile['gender'].to_dict()
@@ -48,11 +48,11 @@ def gender_convert(g):
         return 2
     else:
         return 0
-# 疑问同上
+#
 all_feat['gender'] = [gender_convert(user_gender.get(int(u),None)) for u in all_feat['username']]
 
 user_edu = user_profile['education'].to_dict()
-#存疑
+#存疑 index这里怎么用 已改动
 def edu_convert(x):
     edus = ["Bachelor's","High", "Master's", "Primary", "Middle","Associate","Doctorate"]
     #if x == None or or math.isnan(x):
@@ -62,7 +62,12 @@ def edu_convert(x):
     ii = edus.index(x)
     return ii+1
 
-all_feat['education'] = [edu_convert(user_edu.get(int(u), None)) for u in all_feat['username']]
+
+# for u in all_feat['username']:
+#     index = edu_convert(user_edu.get(int(u), None))
+#     all_feat['education'].push(index)
+
+all_feat['education'] = [edu_convert(user_edu.get(int(u), None)) for u in all_feat['username']]# 为了占位符写的
 #-----------------------------------------------------------------------------------------------------------
 # 计算每个用户名下有多少门课程
 user_enroll_num = all_feat.groupby('username').count()[['course_id']]
@@ -105,22 +110,37 @@ en_categorys = [
       'environment',
       'chemistry'
       ]
+#存疑
 def category_convert(cc):  
+    # isinstance 判断cc的类型 是str返回True 反之返回Flase
     if isinstance(cc, str):
-        for i, c in zip(range(len(en_categorys)), en_categorys):
+        for i, c in zip(range(len(en_categorys)), en_categorys): # en_categorys 是课程的分类名
             if cc == c:
                 return i+1
     else:
         return 0
+    # reformat
+    # if isinstance(cc, str) is false:
+    #     return 0
+    # for key,value in encategorys:
+    #     if value == cc
+    #         return i+1
+    # return 0
+
+
 category_dict = course_info['category'].to_dict()
 
-all_feat['course_category'] = [category_convert(category_dict.get(str(x), None)) for x in all_feat['course_id']]
-
+# 对dict进行get就是取值， 第二个参数是默认返回值 none 意思就是当值不存在时返回none
+all_feat['course_category'] = [
+    category_convert( category_dict.get(str(x), None) ) for x in all_feat['course_id']
+    ]
+# act_feat从最原始的训练数据 train
 act_feats = [c for c in train_feat.columns if 'count' in c or 'time' in c or 'num' in c]
-
+# 以二进制写入到pkl文件
 pkl.dump(act_feats, open('act_feats.pkl','wb'))
 
 num_feats = act_feats + ['age','course_enroll_num','user_enroll_num']
+# 将数据标准化
 scaler= StandardScaler()
 newX = scaler.fit_transform(all_feat[num_feats])
 print(newX.shape)
