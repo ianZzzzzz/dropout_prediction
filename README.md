@@ -3,7 +3,7 @@
 我在以下解读中用到的数据与变量名与论文代码中保持一致，建议配着论文看。
 解读如下：
 
-1.作者对数据下如下定义：
+1.定义如下：
 (1)C  courses set
 (2)U  users set
 (3)E  enroll_id  代表一个用户和一门课程的唯一对应 i.e. { [u,c] ....} 
@@ -46,6 +46,37 @@ c.这部分代码我还没看完
 ⑥实验部分
 1)该模型比XGBoost准确度高零点几，但是算力开销部分没有给出数据。
 2)在理解XGBoost的原理。
+
+数据处理流程：
+```mermaid
+graph TB
+    s1(prediction_log / train_log.csv)
+    s2(prediction_log / train_truth.csv)
+    s3(course_info.csv)
+    s4(user_info.csv)
+
+    f1(train_features.csv)
+    f2(act_feats.pkl)
+    f3(train_feat.csv)
+
+    p1[feat_extract.py] 
+    p2[preprocess.py]
+    p3[main.py]
+
+    s1--read   -->p1
+    s2--read   -->p1
+    p1--write -->f1 
+    s3--read-->p2
+    s4--read-->p2
+    f1--read   -->p2
+    p2--pkl.dump-->f2
+    p2--write-->f3
+    f2--pkl.load-->p3
+    f3--read -->p3
+
+    
+   
+```
 --------------------------------------------------------------
 
 This is the code for dropout prediction in our AAAI'19 paper:
