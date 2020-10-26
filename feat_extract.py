@@ -13,7 +13,7 @@ all_log = pd.concat([train, test])
 train_enroll = list(set(list(train['enroll_id'])))
 test_enroll = list(set(list(test['enroll_id'])))
 #--------------------------------------------------------------------------------------------
-# 以下 是特征 Z（u,c)中包含的行为数据 分为以下几个大类 再分为list中的小类 
+# 以下 是特征 X（u,c)中包含的行为数据 分为以下几个大类 再分为list中的小类 
 # 此处初始化这些分类的名字
 video_action = ['seek_video','play_video','pause_video','stop_video','load_video']
 problem_action = ['problem_get','problem_check','problem_save','reset_problem','problem_check_correct', 'problem_check_incorrect']

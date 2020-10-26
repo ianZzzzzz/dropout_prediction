@@ -1,9 +1,3 @@
-"""
-c:course
-u:user
-a?
-
-"""
 import numpy as np
 import tensorflow as tf
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -145,13 +139,13 @@ class CFIN():
                     scope_bn='bn_conv' # bn操作可以在1*1卷积层上进行 （我觉得其它大小也行v
                     )
             self.a_embeddings = tf.nn.conv1d(
-                                            self.a_embeddings, 
-                                            self.weights['a_conv_filter'], 
-                                            stride=5, 
-                                            padding='VALID',
-                                            data_format='NWC' # 这是什么
-                                            ) 
-                                            + self.weights['a_conv_bias']
+                self.a_embeddings, 
+                self.weights['a_conv_filter'], 
+                stride=5, 
+                padding='VALID',
+                data_format='NWC' # 这是什么
+            ) + \
+            + self.weights['a_conv_bias']
             """ 为什么要写这个？以下
             if self.batch_norm:
                 self.a_embeddings = self.batch_norm_layer(
