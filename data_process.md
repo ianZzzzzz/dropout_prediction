@@ -5,6 +5,11 @@ graph TB
     s3(course_info.csv)
     s4(user_info.csv)
 
+    ss1(cluster/user_dict)
+    ss2(cluster/label_5_10time.npy)
+    ss1--load-->p2
+    ss2--load-->p2
+
     f1(train_features.csv)
     f2(act_feats.pkl)
     f3(train_feat.csv)
@@ -19,9 +24,9 @@ graph TB
     s3--read-->p2
     s4--read-->p2
     f1--read   -->p2
-    p2--pkl.dump-->f2
+    p2--dump-->f2
     p2--write-->f3
-    f2--pkl.load-->p3
+    f2--load-->p3
     f3--read -->p3
 
     
