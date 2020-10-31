@@ -61,7 +61,7 @@ def feat_augment(train_feat, test_feat):
 
     return  all_feat.loc[train_feat.index], 
             all_feat.loc[test_feat.index], 
-            act_feat # ==xi+gu+gc 从这一部分代码看是这样 但是输入的参数是act_feat.pkl里的数据 这还不能完全确定含义
+            act_feat # ==xi+gu+gc 从这一部分代码看是这样 但是输入的参数是act_feat.pkl里的数据还不能完全确定含义
 
 """
 数据解析
@@ -137,11 +137,7 @@ def model_run(
                  params, 
                  act_feat
                  ):
-    u_data = {
-        feat_dim:'',
-        indice:'',
-        value
-    }
+        
     u_feat_dim, u_data_indice, u_data_value = dataparse(dfTrain_u, dfTest_u, user_num_feat, user_cat_feat)
     ui_train, uv_train = np.asarray(u_data_indice.loc[dfTrain_u.index], dtype=int), np.asarray(u_data_value.loc[dfTrain_u.index], dtype=float)
     ui_test, uv_test = np.asarray(u_data_indice.loc[dfTest_u.index], dtype=int), np.asarray(u_data_value.loc[dfTest_u.index], dtype=float)
