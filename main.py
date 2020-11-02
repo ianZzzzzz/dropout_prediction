@@ -59,9 +59,13 @@ def feat_augment(train_feat, test_feat):
         act_feat.append(f+'#course#mean')
         act_feat.append(f+'#course#max')
 
+<<<<<<< HEAD
     return  all_feat.loc[train_feat.index], 
             all_feat.loc[test_feat.index], 
             act_feat # ==xi+gu+gc 从这一部分代码看是这样 但是输入的参数是act_feat.pkl里的数据还不能完全确定含义
+=======
+    return  all_feat.loc[train_feat.index],all_feat.loc[test_feat.index],act_feat # ==xi+gu+gc 从这一部分代码看是这样 但是输入的参数是act_feat.pkl里的数据 这还不能完全确定含义
+>>>>>>> 244d211300e30e6653bec6c3531bbbc4eee456fa
 
 """
 数据解析
