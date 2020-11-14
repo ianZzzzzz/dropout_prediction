@@ -197,7 +197,7 @@ def model_run(
 dfTrain_u, dfTest_u, dfTrain_c, dfTest_c, dfTrain_a, dfTest_a = load_data()
 dfTrain_a, dfTest_a, act_feat = feat_augment(dfTrain_a, dfTest_a)
 
-#定义json
+# json
 params = {
     "embedding_size": 32,
     "attn_size": 16,

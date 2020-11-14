@@ -86,7 +86,7 @@ class CFIN():
         
         self.graph = tf.Graph()
         with self.graph.as_default():
-            tf.set_random_seed(self.random_seed)
+            tf.set_random_s (self.random_seed) # 
             # placeholder 占位符 没有什么意义 只是留个坑方便后面实例化 方便调用函数 
             self.u_feat_index = tf.placeholder(tf.int32, shape=[None, None],
                                                  name="u_feat_index")  # None * F
@@ -114,11 +114,11 @@ class CFIN():
             self.u_embeddings = tf.nn.embedding_lookup(self.weights['u_feat_embeddings'], self.u_feat_index)
             self.c_embeddings = tf.nn.embedding_lookup(self.weights['c_feat_embeddings'], self.c_feat_index)
             # reshape
-            a_feat_value = tf.reshape(self.a_feat_value, shape=[-1, self.a_field_size, 1])  #原来是 uac排列     
+            a_feat_value = tf.reshape(self.a_feat_value, shape=[-1, self.a_field_size, 1])  
             u_feat_value = tf.reshape(self.u_feat_value, shape=[-1, self.u_field_size, 1])
             c_feat_value = tf.reshape(self.c_feat_value, shape=[-1, self.c_field_size, 1])
             # 相乘
-            self.a_embeddings = tf.multiply(self.a_embeddings, a_feat_value)  #原来是cua排列
+            self.a_embeddings = tf.multiply(self.a_embeddings, a_feat_value) 
             self.c_embeddings = tf.multiply(self.c_embeddings, c_feat_value)
             self.u_embeddings = tf.multiply(self.u_embeddings, u_feat_value)
             # 知识补充 BN:Batch Normalization
@@ -154,23 +154,24 @@ class CFIN():
                     scope_bn='bn_conv'
                     )
             """
-            self.a_embeddings = tf.nn.relu(self.a_embeddings)
-            self.uc_embeddings = tf.concat([self.u_embeddings, self.c_embeddings], axis=1)
+            self.a_embeddings = tf.nn.relu(self.a_embeddings) # 就手写一个节点？
+            self.uc_embeddings = tf.concat([self.u_embeddings, self.c_embeddings], axis=1) # 就这样拼起来？
             
             self.uc_inter = tf.nn.relu(
                 tf.matmul(
                     tf.reshape(
                         self.uc_embeddings, 
                         shape = [-1, ( self.u_field_size + self.c_field_size ) *self.embedding_size ] ), 
+
                         self.weights['ctx_pool_weight']) + self.weights['ctx_pool_bias']
                         )
 
             self.uca_inter = tf.concat
             (
                 [
-                    tf.tile
+                    tf.tile # 重复一个张量 a=[1,2] tile(a,2) -> [[1,2],[1,2 ]]
                     ( 
-                        tf.expand_dims(self.uc_inter, 1), 
+                        tf.expand_dims(self.uc_inter, 1),  
                         [1 , self.a_field_size//5 , 1]
                     ), 
                     self.a_embeddings
@@ -182,14 +183,18 @@ class CFIN():
                 tf.matmul(
                     tf.reshape(
                         self.uca_inter, 
-                        shape=[-1, self.conv_size + self.context_size]), 
-                        self.weights['attn_out_1']) + self.weights['attn_bias_1'])
+                        shape=[-1, self.conv_size + self.context_size]
+                    ),self.weights['attn_out_1']
+                ) + self.weights['attn_bias_1']
+             )
             self.attn_w = tf.nn.softmax(
                 tf.reshape(
                     tf.matmul(
                         self.attn_logit, 
-                        self.weights['attn_out']), 
-                        shape=[-1, self.a_field_size//5]))
+                        self.weights['attn_out']
+                        ),shape=[-1, self.a_field_size//5]
+                    )
+                )
             if self.attn_enable:
                 self.a_weight_emb = tf.multiply(tf.expand_dims(self.attn_w,2), self.a_embeddings)
             else:
@@ -380,8 +385,10 @@ class CFIN():
                 self.valid_result.append(valid_result)
             if self.verbose > 0 and epoch % self.verbose == 0:
                 if has_valid:
-                    print("[%d] train-result=%.4f, valid-result=%.4f, valid-f1=%.4f [%.1f s]"
-                        % (epoch + 1, train_result, valid_result, valid_f1, time() - t1))
+                    print(
+                        "[%d] train-result=%.4f, valid-result=%.4f, valid-f1=%.4f [%.1f s]"
+                        % (epoch + 1, train_result, valid_result, valid_f1, time() - t1)
+                        )
                 else:
                     print("[%d] train-result=%.4f [%.1f s]"
                         % (epoch + 1, train_result, time() - t1))
