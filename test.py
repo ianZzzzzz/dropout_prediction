@@ -1,0 +1,81 @@
+import pandas as cudf
+import os
+def return_file(path):
+    path_dict = {}    
+    for dirname, _, filenames in os.walk(path):    
+        
+        for filename in filenames:            
+           
+            path = os.path.join(dirname, filename)
+            path_dict[filename] = path
+            #print(path)
+            #yield path       
+    return path_dict          
+def load_data(path_dict,base):
+
+    
+    print('load run' )
+    
+    raw_data = {}
+   
+    if base == 'cudf':
+       
+        print('read csv by cudf')
+        
+        for file in path_dict:
+            raw_data[file[:-4]] = cudf.read_csv(path_dict[file])
+               # dtype = columns_type_dict[file], 
+            print(
+                file[:-4],':',"\n",
+                "Rows: {:,}".format(len(raw_data[file[:-4]])), "\n" +
+                "Columns: {}".format(len(raw_data[file[:-4]].columns)),'\n')
+
+    print('load finish by ',base)
+    return raw_data
+def find_null(raw_data,base):
+    print('find_null run')
+    
+    for i in raw_data:
+    
+        print(i,' :')
+        total = len(raw_data[i])
+        for column in raw_data[i].columns:
+            if raw_data[i][column].isna().sum() != 0:
+                null_key = 1
+                print("{} has: {:,} ,{:.2f}% missing values.".format(column, raw_data[i][column].isna().sum(), 
+                                                                     (raw_data[i][column].isna().sum()/total)*100))
+                raw_data[i][column] = raw_data[i][column].fillna(-1) # set null = -1
+            else : print(column,' ','does not find null')
+        print('\n')
+        
+    return raw_data
+path = 'D:\\zyh\\_workspace\\dropout_prediction\\test'
+path_dict = return_file(path)
+df =  find_null(  load_data(path_dict, base = 'cudf')  ,base ='cudf')
+user_id = df['user_info'].index.unique()
+train_log = df['train_log']
+
+enroll_dict  = {}
+course_dict  = {}
+student_dict = {}
+
+for i,v in train_log.iterrows() :
+    # init
+    if v['enroll_id'] not in enroll_dict:
+        enroll_dict[v['enroll_id']] = cudf.DataFrame()
+    if v['course_id'] not in course_dict:
+        course_dict[v['course_id']] = cudf.DataFrame()
+    if v['username'] not in student_dict:
+        student_dict[v['username']] = cudf.DataFrame()
+    # init end
+    enroll_dict[v['enroll_id']]  = enroll_dict[v['enroll_id']].append(
+        v.drop(labels =['enroll_id','username','course_id']))
+    
+    if v.username not in course_dict[v['course_id']].values:
+        course_dict[v['course_id']]  = course_dict[v['course_id']].append([v.username])
+    if v.course_id not in student_dict[v['username']].values:
+        student_dict[v['username']]  = student_dict[v['username']].append([v.course_id])
+
+    
+
+print(enroll_dict,course_dict,student_dict)

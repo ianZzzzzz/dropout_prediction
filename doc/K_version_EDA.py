@@ -11,7 +11,7 @@ dtypes = {
     "prior_question_had_explanation": "int8"
 }
 path = ''
-train = cudf.read_csv(path, dtype=dtypes)
+raw_data[i] = curaw_data[i].read_csv(path, dtype=dtypes)
 
 data_type = {
     'enroll_id':'int64'
@@ -21,3 +21,10 @@ data_type = {
     ,'action':'str'
     ,'object':'str'
     ,'time':'str'}      
+raw_data = []
+total = len(raw_data[i])
+for column in raw_data[i].columns:
+    if raw_data[i][column].isna().sum() != 0:
+        print("{} has: {:,} ({:.2f}%) missing values.".format(column, raw_data[i][column].isna().sum(), 
+                                                             (raw_data[i][column].isna().sum()/total)*100))
+ 
