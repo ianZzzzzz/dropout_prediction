@@ -1,5 +1,6 @@
 import pandas as cudf
 import os
+import json
 def return_file(path):
     path_dict = {}    
     for dirname, _, filenames in os.walk(path):    
@@ -76,6 +77,19 @@ for i,v in train_log.iterrows() :
     if v.course_id not in student_dict[v['username']].values:
         student_dict[v['username']]  = student_dict[v['username']].append([v.course_id])
 
-    
+# sort
+for i in enroll_dict:
+    def to_json(df,orient='split'):
+        df_json = df.to_json(orient = orient, force_ascii = False)
+        return json.loads(df_json)
 
-print(enroll_dict,course_dict,student_dict)
+    enroll_dict[i] = enroll_dict[i].sort_values(by = ['time'])
+    enroll_dict[i] = enroll_dict[i].to_dict(orient='records') # to_json(enroll_dict[i])
+with open("json_file//train_log.json","w") as f:
+    json.dump(enroll_dict,f)
+    print("writed to json")
+
+js = cudf.read_json('json_file//train_log.json')
+for i in js:
+    js[i] = cudf.DataFrame.from_dict(js[i], orient='index')
+print(js)
