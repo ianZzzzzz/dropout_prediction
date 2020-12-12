@@ -93,6 +93,8 @@ def preprocess(train_log):
             return json.loads(df_json)
 
         enroll_dict[i] = enroll_dict[i].sort_values(by = ['time'])
+
+
     processed_data= {
         'enroll':enroll_dict,
         'course':course_dict,
@@ -112,5 +114,8 @@ def preprocess(train_log):
     print(js)
 '''
 
-    
+ def to_vec(dict_enroll):
+     for i in dict_enroll :
+         
+
     
