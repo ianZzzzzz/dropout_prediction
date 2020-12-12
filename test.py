@@ -53,43 +53,64 @@ def find_null(raw_data,base):
 path = 'D:\\zyh\\_workspace\\dropout_prediction\\test'
 path_dict = return_file(path)
 df =  find_null(  load_data(path_dict, base = 'cudf')  ,base ='cudf')
-user_id = df['user_info'].index.unique()
 train_log = df['train_log']
 
-enroll_dict  = {}
-course_dict  = {}
-student_dict = {}
+for col in train_log.columns:
+    print( 'in ',col,' : ',
+        train_log[col].unique(),'\n',
+        train_log[col].nunique(),' unique values'
+        )
 
-for i,v in train_log.iterrows() :
-    # init
-    if v['enroll_id'] not in enroll_dict:
-        enroll_dict[v['enroll_id']] = cudf.DataFrame()
-    if v['course_id'] not in course_dict:
-        course_dict[v['course_id']] = cudf.DataFrame()
-    if v['username'] not in student_dict:
-        student_dict[v['username']] = cudf.DataFrame()
-    # init end
-    enroll_dict[v['enroll_id']]  = enroll_dict[v['enroll_id']].append(
-        v.drop(labels =['enroll_id','username','course_id']))
+
+user_id = df['user_info'].index.unique()
+
+def preprocess(train_log):
+    enroll_dict  = {}
+    course_dict  = {}
+    student_dict = {}
+
+    for i,v in train_log.iterrows() :
+        # init
+        if v['enroll_id'] not in enroll_dict:
+            enroll_dict[v['enroll_id']] = cudf.DataFrame()
+        if v['course_id'] not in course_dict:
+            course_dict[v['course_id']] = cudf.DataFrame()
+        if v['username'] not in student_dict:
+            student_dict[v['username']] = cudf.DataFrame()
+        # init end
+        enroll_dict[v['enroll_id']]  = enroll_dict[v['enroll_id']].append(
+            v.drop(labels =['enroll_id','username','course_id']))
+        
+        if v.username not in course_dict[v['course_id']].values:
+            course_dict[v['course_id']]  = course_dict[v['course_id']].append([v.username])
+        if v.course_id not in student_dict[v['username']].values:
+            student_dict[v['username']]  = student_dict[v['username']].append([v.course_id])
+
+    # sort
+    for i in enroll_dict:
+        def to_json(df,orient='split'):
+            df_json = df.to_json(orient = orient, force_ascii = False)
+            return json.loads(df_json)
+
+        enroll_dict[i] = enroll_dict[i].sort_values(by = ['time'])
+    processed_data= {
+        'enroll':enroll_dict,
+        'course':course_dict,
+        'student':student_dict }
+    return processed_data
+''' 
+
+        enroll_dict[i] = enroll_dict[i].to_dict(orient='records') # to_json(enroll_dict[i])
+
+    for 
+    with open("json_file//train_log.json","w") as f:
+        json.dump(enroll_dict,f)
+        print("writed to json")
+    js = cudf.read_json('json_file//train_log.json')
+    for i in js:
+        js[i] = cudf.DataFrame.from_dict(js[i], orient='index')
+    print(js)
+'''
+
     
-    if v.username not in course_dict[v['course_id']].values:
-        course_dict[v['course_id']]  = course_dict[v['course_id']].append([v.username])
-    if v.course_id not in student_dict[v['username']].values:
-        student_dict[v['username']]  = student_dict[v['username']].append([v.course_id])
-
-# sort
-for i in enroll_dict:
-    def to_json(df,orient='split'):
-        df_json = df.to_json(orient = orient, force_ascii = False)
-        return json.loads(df_json)
-
-    enroll_dict[i] = enroll_dict[i].sort_values(by = ['time'])
-    enroll_dict[i] = enroll_dict[i].to_dict(orient='records') # to_json(enroll_dict[i])
-with open("json_file//train_log.json","w") as f:
-    json.dump(enroll_dict,f)
-    print("writed to json")
-
-js = cudf.read_json('json_file//train_log.json')
-for i in js:
-    js[i] = cudf.DataFrame.from_dict(js[i], orient='index')
-print(js)
+    
