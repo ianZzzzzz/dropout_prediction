@@ -1,4 +1,6 @@
 import pandas as cudf
+from datetime import datetime
+from typing import List, Dict 
 import os
 import json
 def return_file(path):
@@ -30,6 +32,8 @@ def load_data(path_dict,base):
                 file[:-4],':',"\n",
                 "Rows: {:,}".format(len(raw_data[file[:-4]])), "\n" +
                 "Columns: {}".format(len(raw_data[file[:-4]].columns)),'\n')
+            for i in raw_data[file[:-4]].columns:
+                print(i,' : ',type(i))
 
     print('load finish by ',base)
     return raw_data
@@ -63,6 +67,7 @@ for col in train_log.columns:
 
 
 user_id = df['user_info'].index.unique()
+
 
 def preprocess(train_log):
     enroll_dict  = {}
@@ -113,9 +118,30 @@ def preprocess(train_log):
         js[i] = cudf.DataFrame.from_dict(js[i], orient='index')
     print(js)
 '''
+ACTION_MAP = {
+    1:'load_video'
+}
+def to_vec(dict_enroll:Dict[str,Dataframe], dict_without_type):
+    # dict_enroll
+    # dict_without_type.
+    # dict_without_type.
+    for i in dict_enroll :
+        
+        i
+        # dataframe to time_series 
+        #   package by dict {[time,action],[time,action].....}
+    return  None# action_series_dict
 
- def to_vec(dict_enroll):
-     for i in dict_enroll :
-         
 
+def seriesNN(action_series):
+    network = fit(action_series)
+    return network_para
+
+for series in to_vec(dict_enroll):
+    para = seriesNN(series)
     
+
+{
+    1:Dataframe()
+}
+data = []
