@@ -1,9 +1,10 @@
 import pandas as cudf
+from pandas import DataFrame
 from datetime import datetime
 from typing import List, Dict 
 import os
 import json
-def return_file(path):
+def return_file(path: str)-> Dict[str,str]:
     path_dict = {}    
     for dirname, _, filenames in os.walk(path):    
         
@@ -14,17 +15,11 @@ def return_file(path):
             #print(path)
             #yield path       
     return path_dict          
-def load_data(path_dict,base):
-
-    
-    print('load run' )
-    
+def load_data(path_dict: Dict[str,str],base: str)-> Dict[str,DataFrame]:
+    print('load run' )    
     raw_data = {}
-   
     if base == 'cudf':
-       
         print('read csv by cudf')
-        
         for file in path_dict:
             raw_data[file[:-4]] = cudf.read_csv(path_dict[file])
                # dtype = columns_type_dict[file], 
@@ -32,16 +27,11 @@ def load_data(path_dict,base):
                 file[:-4],':',"\n",
                 "Rows: {:,}".format(len(raw_data[file[:-4]])), "\n" +
                 "Columns: {}".format(len(raw_data[file[:-4]].columns)),'\n')
-            for i in raw_data[file[:-4]].columns:
-                print(i,' : ',type(i))
-
     print('load finish by ',base)
     return raw_data
-def find_null(raw_data,base):
+def find_null_set_null(raw_data:DataFrame,base: str,defult: int)->DataFrame:
     print('find_null run')
-    
-    for i in raw_data:
-    
+    for i in raw_data:    
         print(i,' :')
         total = len(raw_data[i])
         for column in raw_data[i].columns:
@@ -49,27 +39,17 @@ def find_null(raw_data,base):
                 null_key = 1
                 print("{} has: {:,} ,{:.2f}% missing values.".format(column, raw_data[i][column].isna().sum(), 
                                                                      (raw_data[i][column].isna().sum()/total)*100))
-                raw_data[i][column] = raw_data[i][column].fillna(-1) # set null = -1
+                raw_data[i][column] = raw_data[i][column].fillna(defult) # set null = -1
             else : print(column,' ','does not find null')
         print('\n')
-        
     return raw_data
-path = 'D:\\zyh\\_workspace\\dropout_prediction\\test'
-path_dict = return_file(path)
-df =  find_null(  load_data(path_dict, base = 'cudf')  ,base ='cudf')
-train_log = df['train_log']
-
-for col in train_log.columns:
-    print( 'in ',col,' : ',
-        train_log[col].unique(),'\n',
-        train_log[col].nunique(),' unique values'
-        )
-
-
-user_id = df['user_info'].index.unique()
-
-
-def preprocess(train_log):
+def print_nunique_in_each_col(df:DataFrame)->None:
+    for col in train_log.columns:
+        print( 'in ',col,' : ',
+            train_log[col].unique(),'\n',
+            train_log[col].nunique(),' unique values'
+            )
+def preprocess(train_log:DataFrame)-> Dict[str,Dict[int,DataFrame]]:
     enroll_dict  = {}
     course_dict  = {}
     student_dict = {}
@@ -121,7 +101,7 @@ def preprocess(train_log):
 ACTION_MAP = {
     1:'load_video'
 }
-def to_vec(dict_enroll:Dict[str,Dataframe], dict_without_type):
+def to_vec(dict_enroll:Dict[str,Dataframe])->DataFrame:
     # dict_enroll
     # dict_without_type.
     # dict_without_type.
@@ -130,7 +110,7 @@ def to_vec(dict_enroll:Dict[str,Dataframe], dict_without_type):
         i
         # dataframe to time_series 
         #   package by dict {[time,action],[time,action].....}
-    return  None# action_series_dict
+    return  # action_series_dict
 
 
 def seriesNN(action_series):
@@ -145,3 +125,12 @@ for series in to_vec(dict_enroll):
     1:Dataframe()
 }
 data = []
+
+
+# 
+path = 'D:\\zyh\\_workspace\\dropout_prediction\\test'
+path_dict = return_file(path)
+df =  find_null_set_null(  load_data(path_dict, base = 'cudf')  ,base ='cudf',defult= -1)
+train_log = df['train_log']
+user_id = df['user_info'].index.unique()
+
