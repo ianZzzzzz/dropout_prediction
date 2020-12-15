@@ -1,5 +1,6 @@
 import pandas as cudf
 from pandas import DataFrame
+for numpy import ndarray
 from datetime import datetime
 from typing import List, Dict 
 import os
@@ -36,7 +37,7 @@ def find_null_set_null(raw_data:DataFrame,base: str,defult: int)->DataFrame:
         total = len(raw_data[i])
         for column in raw_data[i].columns:
             if raw_data[i][column].isna().sum() != 0:
-                null_key = 1
+                
                 print("{} has: {:,} ,{:.2f}% missing values.".format(column, raw_data[i][column].isna().sum(), 
                                                                      (raw_data[i][column].isna().sum()/total)*100))
                 raw_data[i][column] = raw_data[i][column].fillna(defult) # set null = -1
@@ -101,13 +102,19 @@ def preprocess(train_log:DataFrame)-> Dict[str,Dict[int,DataFrame]]:
 ACTION_MAP = {
     1:'load_video'
 }
-def to_vec(dict_enroll:Dict[str,Dataframe])->DataFrame:
-    # dict_enroll
-    # dict_without_type.
-    # dict_without_type.
+def to_vec(dict_enroll : Dict[int , Dataframe] )->DataFrame:
+    def find_gap(i : int)->Dict[str,int]:
+        t = {'start':0, 'end':0}
+        return t
+    def incert_time(df : DataFrame, start : int, end : int )->ndarray:
+        log = DataFrame.values
+        return log
+    def zip_log(log : ndarray, defult_len : int)->ndarray:
+        return log_zip
     for i in dict_enroll :
-        
-        i
+        start,end = find_gap(i)
+        log = incert_time(dict_enroll[i],start,end)
+        log_zip = zip_log(log,defult_len)
         # dataframe to time_series 
         #   package by dict {[time,action],[time,action].....}
     return  # action_series_dict
