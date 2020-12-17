@@ -86,6 +86,13 @@ def preprocess(train_log:DataFrame)-> Dict[str,Dict[int,DataFrame]]:
         'course':course_dict,
         'student':student_dict }
     return processed_data
+def tokenlization(s):
+    actions = set()
+    # actons.update()
+
+    return s
+
+
 ''' 
 
         enroll_dict[i] = enroll_dict[i].to_dict(orient='records') # to_json(enroll_dict[i])
@@ -118,7 +125,6 @@ def to_vec(dict_enroll : Dict[int , Dataframe] )->DataFrame:
         # dataframe to time_series 
         #   package by dict {[time,action],[time,action].....}
     return  # action_series_dict
-
 
 def seriesNN(action_series):
     network = fit(action_series)
