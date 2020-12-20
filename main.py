@@ -7,7 +7,7 @@ import tensorflow as tf
 import pickle as pkl # 待了解
 from model import CFIN
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2,4' #硬件加速参数
+os.environ['CUDA_VISIBLE_DEVICES'] = '2,4' # 硬件加速参数
 act_feat_basic = pkl.load(open('act_feats.pkl','rb'))
 user_cat_feat = ['gender', 'cluster_label']
 user_num_feat = ['age','user_enroll_num']

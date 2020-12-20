@@ -133,3 +133,17 @@ train_log = df['train_log']
 user_id = df['user_info'].index.unique()
 
 '''
+
+a = np.ndarray(
+    [ #1
+''' e1'''
+        [ #2
+        [e1,a,s,o] , # 3
+        [e1,a,s,o]
+        ],
+''' e2'''
+        [
+        [e2,a,s,o],
+        [e2,a,s,o]
+        ]
+    ])
