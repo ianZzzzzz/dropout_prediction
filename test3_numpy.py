@@ -32,7 +32,7 @@ def load_df(path)->DataFrame:
     unique_count(ori)
     return ori
 
-def df_to_dict(pd_log:DataFrame)->Dict[int,ndarray]:
+def df_to_dict(pd_log:DataFrame,c_info: ndarray)->Dict[int,ndarray]:
     ''' df columns: enroll_id,  # useful
                     course_id,
                     username,
@@ -46,8 +46,23 @@ def df_to_dict(pd_log:DataFrame)->Dict[int,ndarray]:
         array --> dict[ enroll_id   :   array.tolist()  ]
         @return dict
     '''
+    def time_padd(log_for_one:ndarray,c_dict: ndarray)->ndarray:
+        ''' 
+        
+        '''
+        for row in range(len(log_for_one)):
+            log_for_one[row,2]= np.datetime64(log_for_one[row,2])
+            start = log_for_one[row,2]
+            course_id = log_for_one[row,3]
+            end = c_dict[course_id][0]
+            log_for_one[row,2] = int((start - end).item().total_seconds())
+        # 将log里时间字符串转换成秒数
+        def gen_empty_array():   
+            empty = np.zeros(c_dict[course_id][1],np.int32)
+
+    pass
     np_log = pd_log.values
-    np_log = np_log[:,[0,4,6]]
+    np_log = np_log[:,[0,4,6,2]] # enroll_id, action, time， course_id
     enroll_id_set = set(np_log[:,0]) # find unique values
     enroll_log_dict = {}
     c = 0
@@ -56,15 +71,17 @@ def df_to_dict(pd_log:DataFrame)->Dict[int,ndarray]:
     total_dict = 0
     loop_start = time.clock()
     for i in enroll_id_set:
-        #emp = np.zeros(shape,np.int32)
+        
 
         mask = np_log[:,0]==i
         #slice_s = time.clock() #
-        log_for_one = np_log[mask][:,[1,2]]
+        log_for_one = np_log[mask][:,[1,2,3]]
+
+        #
 
         #slice_e = time.clock() #
         #slice_g = slice_e - slice_s##
-        enroll_log_dict[i] = log_for_one.tolist()
+        #enroll_log_dict[i] = log_for_one.tolist() # 写入json才做
         #dict_e = time.clock() #
         #dict_g = dict_e -slice_e##
         #total_silce = total_silce + slice_g #
@@ -133,3 +150,13 @@ def course_info_process(info_path)->ndarray:
     return course_info
 info_path = 'D:\\zyh\\_workspace\\dropout_prediction\\test\\course_info.csv'
 c_info = course_info_process(info_path)
+
+def dict_info(c_info: ndarray)-> Dict[int,ndarray]:
+    c_info = c_info[:,[1,2,3]]
+    c_dict = {}
+    for row in range(len(c_info)):
+        id =  c_info[row,0]
+        c_dict[id] = c_info[row,[1,2]]
+    return c_dict
+
+c_dict = dict_info(c_info)
