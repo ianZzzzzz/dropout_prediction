@@ -159,4 +159,4 @@ def dict_info(c_info: ndarray)-> Dict[int,ndarray]:
         c_dict[id] = c_info[row,[1,2]]
     return c_dict
 
-c_dict = dict_info(c_info)
+#c_dict = dict_info(c_info)
