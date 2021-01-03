@@ -1,9 +1,6 @@
 '''
     进展 ：
-        无BUG 目前
-        完成基站数据的序列化 还没有跑完整的预处理
-        还没有对序列编码
-        要加入EDA代码
+      读取csv数据对其归类存字典 转换成训练数据 用自编码器编码
 
 '''
 '''程序功能：
@@ -19,6 +16,7 @@ import pandas as pd
 # import cudf as pd # nvidia GPU only # !pip install cudf 
 from typing import List, Dict
 from numpy import ndarray
+from numpy import datetime64
 from pandas import DataFrame
 import numpy as np
 print_batch = int(10000)
@@ -55,29 +53,6 @@ def load(
         print('load running!')
     if return_mode == 'df':return log
     if return_mode == 'values':return log.values
-def load(
-    log_path: str,
-    
-    read_mode: str,
-    return_mode: str,
-    encoding_='utf-8',
-    data_type=None,
-    columns=None
-    )-> ndarray or DataFrame:
-    '''读取csv文件 返回numpy数组'''
-    #if read_mode == 'cudf':import cudf as pd
-    if read_mode == 'pandas' :
-        import pandas as pd
-        print('load running!')
-        log = pd.read_csv(
-            log_path
-            ,encoding=encoding_
-          #  ,names=columns
-          #  ,dtype=data_type
-            )
-        print(log.head(2))
-    if return_mode == 'df':return log
-    if return_mode == 'values':return log.values
 
 @_t
 def cut_nan(
@@ -104,23 +79,72 @@ def cut_nan(
     return log
 @_t
 def time_convert(
-    log: ndarray ,
-    date_time_col:int, 
-    merge: bool,
-    start_time = '2014-03-01T00:00:00'
-    )->ndarray: 
-    '''将日志数据的时间进行拼接转秒 秒到坐标部分未完成'''
+    log: dict )->ndarray: 
+    print('dict total len :',len(log))
+    print('time convert running!')
+    # 2015-09-25 08:00:00,2016-01-06 08:00:00
     import numpy as np
-    pandas_ = type(pd.DataFrame([]))
-        # type(type(pd.DataFrame([]))) == <class 'type'> not a str :)
-    if type(log)== pandas_ :
-        log = log.values
     
+    for k ,v in log.items():
+        # 遍历字典 
+        # type(v)==list
+        v = np.array(v)
+        time_col = v[:,1]
+        action_col = v[:,0] 
+        
+        c_id = v[0,2]
+        def find_start_end(c_id:str)->Dict[int,datetime64]:
+            ''' 根据course_id 查询课程的总耗时秒数 以及开始时间并返回
+                函数调用了全局变量C_INFO_NP必须在课程信息被加载后才能运行'''
+            mask = C_INFO_NP[:,1] == c_id
+
+            start = C_INFO_NP[mask][:,2]
+            end   = C_INFO_NP[mask][:,3]
+            #type: object ['2016-11-16 08:00:00']
+            start = str(start)
+            end = str(end)
+            #type: str ['2016-11-16 08:00:00']
+            start = start[2:-2]
+            end = end[2:-2]
+            #type: str '2016-11-16 08:00:00'
+
+            end = np.datetime64(end) 
+            start = np.datetime64(start)
+            seconds_of_gap = int((end - start).item().total_seconds())
+
+            time_info = {
+                'length': seconds_of_gap
+                ,'head' : start_time}
+            return time_info
+        time_info = find_start_end(c_id)
+        
+        time_head = time_info['head']
+        time_length = time_info['length']
+        
+        
+        action_col
+        time_col
+        time_head
+        time_length
+
+
+        
+    
+        #print('时间转化完成')
+        #3转秒
+            #(1)
+        
+        total_seconds_of_gap = int((real_time - start_time).item().total_seconds())
+        delta = total_seconds_of_gap # / seconds_per_hour
+        delta = int(delta)
+        date_time_array[row] = delta
+
     date_time_array = np.zeros((len(log),1),dtype=np.int32)
     # 存储一个月的秒数 需要2^22 存储一年的秒数需要2^25
-    print('log total len :',len(log))
-    print('time convert running!')
     
+    
+
+
     for row in range(len(log)):
         if (row%print_batch)==0:print('converted row : ',row)
         #1拼接
@@ -186,23 +210,6 @@ def time_convert(
     print('astype finish')
 
     return new_log
-@_t
-def to_dict(
-    log: ndarray
-    )-> Dict[str,ndarray]:
-    '''将日志转化为以各关键id为索引的字典'''
-    print('to_dict running! log total len : ',len(log))
-    log_dict = {}
-    area_set = set(log[:,0])
-    print('find ',len(area_set),' areas')
-    i = 0
-    for area in area_set:
-        i+=1
-        mask = log[:,0]==area
-        log_dict[area] = log[mask][:,[1,2,3]]
-        if (i%print_batch)==0:print('already dict  ',i,' areas')
-    
-    return log_dict
 @_t
 def to_dict_2(log: ndarray)-> Dict[str,ndarray]: 
     '''优化版 时间复杂度低'''
@@ -285,21 +292,31 @@ def to_json(path,dict_log: Dict[int,ndarray]):
 '''
     import json
     json.dump(dict_log,open(path,'w'))
-log_path = 'D:\\zyh\\_workspace\\dropout_prediction\\prediction_log\\test_log.csv'
-col = ['enroll_id','username','course_id','session_id','action','object','time']
+log_path = 'test\\prediction_log\\test_log.csv'
+log_col = ['enroll_id','username','course_id','session_id','action','object','time']
 
 log_np = load(
     log_path =log_path,
     read_mode ='pandas',
     return_mode = 'values',
     encoding_ = 'utf-8',
-    columns =col)
-log_np_convert = time_convert(log_np[1:,:],merge = False,date_time_col = 6)
-log_dict = to_dict_2(log_np_convert[:,:])
+    columns =log_col)
+log_dict = to_dict_2(log_np[1:,[0,4,6,2]]) # e_id action time c_id
+
+c_info_path = 'test\\course_info.csv'
+c_info_col = ['id','course_id','start','end','course_type','category']
+C_INFO_NP = load(
+    log_path =c_info_path,
+    read_mode ='pandas',
+    return_mode = 'values',
+    encoding_ = 'utf-8',
+    columns =c_info_col
+    )
+
+log_np_convert = dict_time_convert(log_dict)
 ts_dict = time_map(log_dict) 
 to_json(path = 'processed_log.json',dict_log=ts_dict)
 #dataset format
 '''ds_log = np.zeros(
     (len(ts_dict),2),dtype = np.int32)'''
 # BUG 存在问题 每个区域下的日志长度是不确定的  
-
