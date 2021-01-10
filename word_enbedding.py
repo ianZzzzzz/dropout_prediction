@@ -13,17 +13,14 @@ from tensorflow import keras
 import numpy as np
 
 print(tf.__version__)
-train_data = np.array([b'E', b'C', b'B', b'C', b'B', b'C', b'U', b'E', b'U', b'E', b'B',    
-       b'U', b'E', b'B', b'U', b'E', b'B', b'U', b'E', b'B', b'U', b'E',    
-       b'B', b'D', b'U', b'E', b'B', b'U', b'E', b'B', b'C', b'U', b'E',    
-       b'B', b'C', b'B'])
-train_data = np.array([[1,2,3,4],[1,2,3,4]],dtype=np.int32).tolist()
+
+train_data = np.array([['1','2','3','14'],['1','2','3','4']],dtype='a2').tolist()
 train_data = keras.preprocessing.sequence.pad_sequences(
     train_data,
     value= 0.0,
-    padding='post',
+    padding='post', # 未知
     dtype='int32',
-    maxlen=16)
+    maxlen=16) # 单条序列最大长度
 
 # model
 

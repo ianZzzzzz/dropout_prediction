@@ -199,27 +199,27 @@ def convert(
                 list_time[row_num] = _time
                 # 为了省内存 将不同的action用字母表代替 都是符号 不影响数据特征 
                 replace_dict = {
-                    'seek_video':'A'
-                    ,'play_video':'B'
-                    ,'pause_video':'C'
-                    ,'stop_video':'D'
-                    ,'load_video':'E'
-                    ,'problem_get':'F'
-                    ,'problem_check':'G'
-                    ,'problem_save':'H'
-                    ,'reset_problem':'I'
-                    ,'problem_check_correct':'J'
-                    , 'problem_check_incorrect':'K'
-                    ,'create_thread':'L'
-                    ,'create_comment':'M'
-                    ,'delete_thread':'N'
-                    ,'delete_comment':'O'
-                    ,'click_info':'P'
-                    ,'click_courseware':'Q'
-                    ,'click_about':'R'
-                    ,'click_forum':'S'
-                    ,'click_progress':'T'
-                    ,'close_courseware':'U'}
+                    'seek_video':'1'
+                    ,'play_video':'2'
+                    ,'pause_video':'3'
+                    ,'stop_video':'4'
+                    ,'load_video':'5'
+                    ,'problem_get':'6'
+                    ,'problem_check':'7'
+                    ,'problem_save':'8'
+                    ,'reset_problem':'9'
+                    ,'problem_check_correct':'10'
+                    , 'problem_check_incorrect':'11'
+                    ,'create_thread':'12'
+                    ,'create_comment':'13'
+                    ,'delete_thread':'14'
+                    ,'delete_comment':'15'
+                    ,'click_info':'16'
+                    ,'click_courseware':'17'
+                    ,'click_about':'18'
+                    ,'click_forum':'19'
+                    ,'click_progress':'20'
+                    ,'close_courseware':'21'}
         
                 _action = replace_dict[_action]
                 list_action[row_num] = _action
@@ -279,8 +279,6 @@ def to_json(path,dict_log: Dict[int,ndarray]):
     import json
     json.dump(dict_log,open(path,'w'))
 
-
-
 log_path = 'test\\prediction_log\\test_log_full.csv'
 log_col = ['enroll_id','username','course_id','session_id','action','object','time']
 log_np = load(
@@ -301,7 +299,6 @@ C_INFO_NP = load(
     encoding_ = 'utf-8',
     columns =c_info_col
     )
-
 
 
 log_np_convert = convert(log_dict,drop_zero = True,testing=True)
