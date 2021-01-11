@@ -38,6 +38,8 @@ model.compile(optimizer='adam',
               loss='binary_crossentropy',
               metrics=['accuracy'])
 
+
+
 history = model.fit(partial_x_train,
                     partial_y_train,
                     epochs=40,
