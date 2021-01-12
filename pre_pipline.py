@@ -6,7 +6,7 @@
         在各注册号下的日志中
         取时间值最小与最大的行作为时间起始与重点 得出时间序列长度L 单位秒
         建立长度L 的零数组 将数据行根据时间列的值填充进数组中
-        将数据行action列的数据按照操作名替换表替换为字母 以节省内存
+        将数据行action列的数据按照操作名替换表替换为数字 以节省内存
         
         '''
 '''
@@ -48,7 +48,11 @@ from numpy import ndarray
 from numpy import datetime64
 from pandas import DataFrame
 import numpy as np
+
+TEST_OR_NOT = True
 print_batch = int(1000000)
+chunk_size = int(10000)
+
 def _t(function):
     from functools import wraps
     import time
@@ -66,25 +70,46 @@ def _t(function):
         print ('[Function: {name} finished, spent time: {time:.2f}s]'.format(name = function.__name__,time = t1 - t0))
         return result
     return function_timer
+
 @_t
 def load(
     log_path: str,
     read_mode: str,
     return_mode: str,
     encoding_='utf-8',
-    columns=None
-    )-> ndarray or DataFrame:
+    columns=None,
+    test=TEST_OR_NOT)-> ndarray or DataFrame:
     '''读取csv文件 返回numpy数组'''
     #if read_mode == 'cudf':import cudf as pd
     if read_mode == 'pandas' :
         import pandas as pd
-        log = pd.read_csv(log_path,encoding=encoding_,names=columns,)
+        if test ==True: # only read 10000rows 
+            reader = pd.read_csv(
+                log_path
+                ,encoding=encoding_
+                ,names=columns
+                ,chunksize=chunk_size)
+                
+            for chunk in reader:
+                # use chunk_size to choose the size of test rows instead of loop
+                log = chunk
+                return log.values
+
+        else: # read full file
+            log = pd.read_csv(
+                log_path
+                ,encoding=encoding_
+                ,names=columns)
+            
         print('load running!')
     if return_mode == 'df':return log
     if return_mode == 'values':return log.values
 
 @_t
-def to_dict_2(log: ndarray)-> Dict[str,ndarray]: 
+def to_dict_2(
+    log: ndarray
+    ,test=TEST_OR_NOT
+    )-> Dict[str,ndarray]: 
     '''优化版 时间复杂度低'''
     print('find ',len(log),' row logs')
     i = 0
@@ -103,14 +128,15 @@ def to_dict_2(log: ndarray)-> Dict[str,ndarray]:
             #print(log_dict[area])
         i+=1
         if (i%print_batch)==0:print('already dict : ',i,'row logs')
-    
+        if (test == True) and (i ==print_batch):return log_dict
     return log_dict
 
 @_t
 def convert(
     log: dict 
     ,drop_zero: bool
-    ,testing: bool)->dict: 
+    ,testing=TEST_OR_NOT
+    )->dict: 
     print('dict total len :',len(log))
     print(' convert running!')
     
@@ -151,14 +177,14 @@ def convert(
         __head = np.min(__time)
         __tail = np.max(__time)
         __length = __tail - __head +1
-        action_series = np.zeros((__length,1),dtype='a1')
+        action_series = np.zeros((__length,1),dtype=np.uint8)
 
         for row in log_np:
             __t = int(row[1]) # time now
             __location = __t - __head
             action_series[__location] = row[0]
         if drop_zero == True:
-            mask = action_series!= b''
+            mask = action_series!= np.uint8(0)
             action_series = action_series[mask]
 
         return action_series
@@ -199,27 +225,27 @@ def convert(
                 list_time[row_num] = _time
                 # 为了省内存 将不同的action用字母表代替 都是符号 不影响数据特征 
                 replace_dict = {
-                    'seek_video':'1'
-                    ,'play_video':'2'
-                    ,'pause_video':'3'
-                    ,'stop_video':'4'
-                    ,'load_video':'5'
-                    ,'problem_get':'6'
-                    ,'problem_check':'7'
-                    ,'problem_save':'8'
-                    ,'reset_problem':'9'
-                    ,'problem_check_correct':'10'
-                    , 'problem_check_incorrect':'11'
-                    ,'create_thread':'12'
-                    ,'create_comment':'13'
-                    ,'delete_thread':'14'
-                    ,'delete_comment':'15'
-                    ,'click_info':'16'
-                    ,'click_courseware':'17'
-                    ,'click_about':'18'
-                    ,'click_forum':'19'
-                    ,'click_progress':'20'
-                    ,'close_courseware':'21'}
+                    'seek_video': 1
+                    ,'play_video':2
+                    ,'pause_video':3
+                    ,'stop_video':4
+                    ,'load_video':5
+                    ,'problem_get':6
+                    ,'problem_check':7
+                    ,'problem_save':8
+                    ,'reset_problem':9
+                    ,'problem_check_correct':10
+                    , 'problem_check_incorrect':11
+                    ,'create_thread':12
+                    ,'create_comment':13
+                    ,'delete_thread':14
+                    ,'delete_comment':15
+                    ,'click_info':16
+                    ,'click_courseware':17
+                    ,'click_about':18
+                    ,'click_forum':19
+                    ,'click_progress':20
+                    ,'close_courseware':21}
         
                 _action = replace_dict[_action]
                 list_action[row_num] = _action
@@ -273,25 +299,52 @@ def to_json(path,dict_log: Dict[int,ndarray]):
         # json不支持ndarray
         # 用json导出 array 要先 .tolist() 读取的时候直接np.array()
     '''
-    '''for k,v in dict_log.items():
+    for k,v in dict_log.items():
         dict_log[k] = v.tolist()
-'''
-    import json
-    json.dump(dict_log,open(path,'w'))
 
-log_path = 'test\\prediction_log\\test_log_full.csv'
+        import json
+        json.dump(dict_log,open(path,'w'))
+
+@_t
+def dict_to_array(dict_log:dict)->list:
+
+    ''' 函数功能:   归类后的数据被存储为dict格式 需要将其转换为list以制作数据集
+                  创建空表，将每次读取到的序列追加进表内
+        need:   numpy
+        note:   用list append执行很快 np.concatenate慢十倍以上'''
+    i = 0
+    print_key = 10000
+    
+    for k,v in dict_log.items():
+        
+        data = np.array(v)
+        
+        
+        try:
+            dataset.append(data)
+        except:
+            dataset = []
+            dataset.append(data)
+        
+        i+=1
+        if (i%print_key)==0:
+            print('already to array ',i,' areas.')
+
+    return dataset
+
+
+log_path = 'D:\\zyh\\data\\prediction_data\\prediction_log\\test_log.csv'
 log_col = ['enroll_id','username','course_id','session_id','action','object','time']
+c_info_path = 'course_info.csv'
+c_info_col = ['id','course_id','start','end','course_type','category']
+
 log_np = load(
     log_path =log_path,
     read_mode ='pandas',
     return_mode = 'values',
     encoding_ = 'utf-8',
     columns =log_col)
-
-log_dict = to_dict_2(log_np[1:,[0,4,6,2]]) # e_id action time c_id
-
-c_info_path = 'test\\course_info.csv'
-c_info_col = ['id','course_id','start','end','course_type','category']
+log_dict = to_dict_2( log_np[1:,[0,4,6,2]] ,test = True) # e_id action time c_id
 C_INFO_NP = load(
     log_path =c_info_path,
     read_mode ='pandas',
@@ -300,8 +353,14 @@ C_INFO_NP = load(
     columns =c_info_col
     )
 
-
 log_np_convert = convert(log_dict,drop_zero = True,testing=True)
+log_list = dict_to_array(log_np_convert)
+
+
+
+# after_convert_path = 'D:\\zyh\\data\\prediction_data\\after_convert_dict\\test_1.json'
+# BUG ON  to_json(after_convert_path,log_np_convert)
+# TypeError: Object of type ndarray is not JSON serializable
 
 
 
