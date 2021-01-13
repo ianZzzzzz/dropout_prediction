@@ -49,9 +49,9 @@ from numpy import datetime64
 from pandas import DataFrame
 import numpy as np
 
-TEST_OR_NOT = True
+TEST_OR_NOT = False
 print_batch = int(1000000)
-chunk_size = int(1000000)
+chunk_size = int(10000) # enable only when TEST_OR_NOT = True
 
 def _t(function):
     from functools import wraps
@@ -241,11 +241,38 @@ def convert(
         return time_info
     
     def time_map(log_np:ndarray)->ndarray:
+        ''' 本函数功能：
+                    将以秒数为索引的不确定顺序nparray 
+                    映射到按秒数排序的ndarray 
+                    返回值近保留有序的action序列
+            BUG日志：
+                    20210113pm 
+                    原始数据中存在错误的时间格式
+                    本map函数遇到错误格式直接忽略本循环
+                    会导致错误行的action值为 b''
+                    进而导致int（）转换出错
+                    报错：ValueError: invalid literal for int() 
+                            with base 10: ''
+                    解决方案： 在字符替换表中先判断若为b'' 则先替换为b'0'
+                     '''
         '''action_series改成无零的action有序表 '''
-        def to_int(x):
-            return int(x)
-        md = map(to_int,log_np[:,1]) 
-        __time = list(md) # time list
+        
+        ''' def to_int(x):
+                x = int(x)
+                return x
+            md = map(to_int,log_np[:,1]) 
+            __time = list(md) # time list'''
+       
+        '''    time_column = log_np[:,1]
+            for __row in range(len(time_column)):
+                try:
+                    time_column[__row] = int(time_column[__row])
+                except: 
+                    print(' e_id in log :',e_id,'row number :',__row)
+
+            __time = time_column'''
+
+        __time = log_np[:,1].astype('int')
 
         __head = np.min(__time)
         __tail = np.max(__time)
@@ -266,8 +293,10 @@ def convert(
     new_dict = {}
     for e_id ,v in log.items():
         i+=1
+       
         if (i%int(1000))==0:
             print('already convert ',i,' e_id ')
+
         # 遍历字典 
         # type(v)==list
         v = np.array(v)
@@ -291,12 +320,15 @@ def convert(
             _row = _log[row_num,:]
             _time = _row[1]
             _action = _row[0]
+            
+
             try:
                 _time = np.datetime64(_time)
                 _time =  int(
                     ( _time - time_head ).item().total_seconds() )
+                
                 list_time[row_num] = _time
-                # 为了省内存 将不同的action用字母表代替 都是符号 不影响数据特征 
+                # 为了省内存 将不同的action用数字代替 都是符号 不影响数据特征 
                 replace_dict = {
                     # video
                     'seek_video': 11
@@ -323,20 +355,27 @@ def convert(
                     ,'click_forum':44
                     ,'click_progress':45
                     ,'close_courseware':46}
-        
-                _action = replace_dict[_action]
+                
+                if _action in replace_dict:
+                    _action = replace_dict[_action]
+                else:
+                    _action = b'0'
                 list_action[row_num] = _action
-            except:print('ERROR log time [_time] :',_time)
+
+            except:
+                print('ERROR log time [_time] :',_time)
+                
+                print('list_time :',list_time,'list_action :',list_action)
+                
+        
         rebulid = np.concatenate( (list_action, list_time), axis = 1)
         
-
         '''出于保留 ‘用户主要的操作分布在开课时间的哪一部分’ 这一特征 
             的目的，将时间转换部分分为两部分写，后期如需重建此特征以上的代码可以不动'''
 
         action_series = time_map(rebulid)
         new_dict[e_id] =  action_series 
-        if (i ==1000)and(testing ==True): 
-            return new_dict
+        
         
     return new_dict
 
@@ -382,7 +421,7 @@ def to_json(path,dict_log: Dict[int,ndarray]):
         import json
         json.dump(dict_log,open(path,'w'))
 
-@_t
+
 def dict_to_array(dict_log:dict)->list:
 
     ''' 函数功能:   归类后的数据被存储为dict格式 需要将其转换为list以制作数据集
@@ -408,12 +447,42 @@ def dict_to_array(dict_log:dict)->list:
             print('already to array ',i,' areas.')
 
     return dataset
+def cut_toolong_tooshort(
+    log_list: list
+    ,up:int
+    ,down:int
+    )-> list:
+    '''
+       本函数根据设定的上下限 返回长度在上下限之间的序列构成的list
+       
+    '''
+
+    uesful_series = []
+    useless_series = []
+    for series in log_list:
+        length = len(series)
+        
+        if (length>down)and(length<up):
+            uesful_series.append(series)
+        else: 
+            useless_series.append(series)
+    
+    return uesful_series
+def find_avg_length_of_series(log_list: list)->list:
+    len_array = np.zeros( len(log_list)+1,dtype = np.uint32)
+    for i in range(len(log_list)):
+        length =  len(log_list[i])
+        len_array[i] = length
+
+    series = len_array
+    mean_ = np.mean(series)
+    return mean_
 
 
 log_path = 'D:\\zyh\\data\\prediction_data\\prediction_log\\test_log.csv'
 log_col = ['enroll_id','username','course_id','session_id','action','object','time']
 c_info_path = 'course_info.csv'
-c_info_col = ['id','course_id','start','end','course_type','category']
+c_info_col = ['id','course_id','start'=,'end','course_type','category']
 
 log_np = load(
     log_path =log_path,
@@ -433,9 +502,12 @@ C_INFO_NP = load(
 log_np_convert = convert(log_dict,drop_zero = True)
 log_list = dict_to_array(log_np_convert)
 
-plot_histogram(log_list) 
+useful_list = cut_toolong_tooshort(log_list,up = 2000,down = 100)
 
+plot_histogram(useful_list) 
 
+avg_series_len = find_avg_length_of_series(useful_list)
+# = 393 < 1500 
 # 得到描述序列长度分布的直方图 以确定截断和填充的长度
 
 
