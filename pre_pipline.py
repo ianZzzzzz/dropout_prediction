@@ -72,6 +72,42 @@ def _t(function):
     return function_timer
 
 @_t
+def plot_histogram(log_list:list):
+    '''
+        描绘列表中序列长度分布的直方图 
+    '''
+    from matplotlib import pyplot as plt 
+    import numpy as np
+    len_array = np.zeros( len(log_list)+1,dtype = np.uint32)
+    for i in range(len(log_list)):
+        length =  len(log_list[i])
+        len_array[i] = length
+
+    series = len_array
+
+    min_ = int(np.min(series))
+    max_ = int(np.max(series))
+    gap =  max_ - min_
+
+    bins_ = [
+        min_
+        ,(min_+int(0.10*gap))
+        ,(min_+int(0.20*gap))
+        ,(min_+int(0.30*gap))
+        ,(min_+int(0.40*gap))
+        ,(min_+int(0.50*gap))
+        ,(min_+int(0.60*gap))
+        ,(min_+int(0.70*gap))
+        ,(min_+int(0.80*gap))
+        ,(min_+int(0.90*gap))
+        ,max_
+        ]
+
+    plt.hist( series, bins =  bins_) 
+    plt.title("histogram") 
+    plt.show()
+
+@_t
 def load(
     log_path: str,
     read_mode: str,
@@ -344,7 +380,7 @@ log_np = load(
     return_mode = 'values',
     encoding_ = 'utf-8',
     columns =log_col)
-log_dict = to_dict_2( log_np[1:,[0,4,6,2]] ,test = True) # e_id action time c_id
+log_dict = to_dict_2( log_np[1:,[0,4,6,2]]) # e_id action time c_id
 C_INFO_NP = load(
     log_path =c_info_path,
     read_mode ='pandas',
@@ -353,9 +389,11 @@ C_INFO_NP = load(
     columns =c_info_col
     )
 
-log_np_convert = convert(log_dict,drop_zero = True,testing=True)
+log_np_convert = convert(log_dict,drop_zero = True)
 log_list = dict_to_array(log_np_convert)
 
+plot_histogram(log_list) 
+# 得到描述序列长度分布的直方图 以确定截断和填充的长度
 
 
 # after_convert_path = 'D:\\zyh\\data\\prediction_data\\after_convert_dict\\test_1.json'

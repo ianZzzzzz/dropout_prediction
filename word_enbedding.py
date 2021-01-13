@@ -1,5 +1,8 @@
 '''
     脚本功能： 
+            按照预设的序列长度，截断或填充
+
+             
 '''
 import json
 json_dict_path = ' '
@@ -11,11 +14,12 @@ import numpy as np
 print(tf.__version__)
 
 train_data = keras.preprocessing.sequence.pad_sequences(
-    train_data,
-    value= 0.0,
-    padding='post', # 未知
-    dtype=np.int8,
-    maxlen=1000) # 单条序列最大长度
+    train_data
+    ,value= 0.0
+    ,padding='post' # 未知
+    ,dtype=np.int8
+    ,maxlen=1000    # 单条序列最大长度
+    ) 
 
 # model
 
