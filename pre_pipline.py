@@ -51,7 +51,7 @@ import numpy as np
 
 TEST_OR_NOT = True
 print_batch = int(1000000)
-chunk_size = int(10000)
+chunk_size = int(1000000)
 
 def _t(function):
     from functools import wraps
@@ -78,34 +78,71 @@ def plot_histogram(log_list:list):
     '''
     from matplotlib import pyplot as plt 
     import numpy as np
-    len_array = np.zeros( len(log_list)+1,dtype = np.uint32)
-    for i in range(len(log_list)):
-        length =  len(log_list[i])
-        len_array[i] = length
+    plt.hist([len(s) for s in log_list], bins = 100) # 横坐标精度
 
-    series = len_array
-
-    min_ = int(np.min(series))
-    max_ = int(np.max(series))
-    gap =  max_ - min_
-
-    bins_ = [
-        min_
-        ,(min_+int(0.10*gap))
-        ,(min_+int(0.20*gap))
-        ,(min_+int(0.30*gap))
-        ,(min_+int(0.40*gap))
-        ,(min_+int(0.50*gap))
-        ,(min_+int(0.60*gap))
-        ,(min_+int(0.70*gap))
-        ,(min_+int(0.80*gap))
-        ,(min_+int(0.90*gap))
-        ,max_
-        ]
-
-    plt.hist( series, bins =  bins_) 
-    plt.title("histogram") 
+    plt.xlabel('Length of a sample')
+    plt.ylabel('Number of samples')
+    plt.title('Sample length distribution')
     plt.show()
+
+    ''' 细节版
+        len_array = np.zeros( len(log_list)+1,dtype = np.uint32)
+        for i in range(len(log_list)):
+            length =  len(log_list[i])
+            len_array[i] = length
+
+        series = len_array
+
+        min_ = int(np.min(series))
+        max_ = int(np.max(series))
+        gap =  max_ - min_
+
+        bins_ = [
+            min_
+            ,(min_+int(0.10*gap))
+            ,(min_+int(0.20*gap))
+            ,(min_+int(0.30*gap))
+            ,(min_+int(0.40*gap))
+            ,(min_+int(0.50*gap))
+            ,(min_+int(0.60*gap))
+            ,(min_+int(0.70*gap))
+            ,(min_+int(0.80*gap))
+            ,(min_+int(0.90*gap))
+            ,max_
+            ]
+
+        plt.hist( series, bins =  bins_)
+        plt.show() '''
+    
+
+
+@_t
+def word_counter(log_list:list)-> Dict[str,dict]:
+    '''
+        计算单词频次
+    '''
+    from matplotlib import pyplot as plt 
+    import numpy as np
+
+    action_type_counter = { '1':0,  '2':0, '3':0, '4':0 }
+    action_counter = {
+        11:0,12:0,13:0,14:0,15:0       # video
+        ,21:0,22:0,23:0,24:0,25:0,26:0  # problem
+        ,31:0,32:0,33:0,34:0            # common
+        ,41:0,42:0,43:0,44:0,45:0,46:0  # click
+        }
+    for i in range(len(log_list)):
+
+        series_ = log_list[i]
+        
+        for action_ in series_:
+
+            action_type = str(action_)[0]
+            action_type_counter[action_type] +=1
+            action_counter[action_] +=1
+    
+    re = {'type':action_type_counter ,'action':action_counter}
+    return re
 
 @_t
 def load(
@@ -261,27 +298,31 @@ def convert(
                 list_time[row_num] = _time
                 # 为了省内存 将不同的action用字母表代替 都是符号 不影响数据特征 
                 replace_dict = {
-                    'seek_video': 1
-                    ,'play_video':2
-                    ,'pause_video':3
-                    ,'stop_video':4
-                    ,'load_video':5
-                    ,'problem_get':6
-                    ,'problem_check':7
-                    ,'problem_save':8
-                    ,'reset_problem':9
-                    ,'problem_check_correct':10
-                    , 'problem_check_incorrect':11
-                    ,'create_thread':12
-                    ,'create_comment':13
-                    ,'delete_thread':14
-                    ,'delete_comment':15
-                    ,'click_info':16
-                    ,'click_courseware':17
-                    ,'click_about':18
-                    ,'click_forum':19
-                    ,'click_progress':20
-                    ,'close_courseware':21}
+                    # video
+                    'seek_video': 11
+                    ,'play_video':12
+                    ,'pause_video':13
+                    ,'stop_video':14
+                    ,'load_video':15
+                    # problem
+                    ,'problem_get':21
+                    ,'problem_check':22
+                    ,'problem_save':23
+                    ,'reset_problem':24
+                    ,'problem_check_correct':25
+                    , 'problem_check_incorrect':26
+                    # comment
+                    ,'create_thread':31
+                    ,'create_comment':32
+                    ,'delete_thread':33
+                    ,'delete_comment':34
+                    # click
+                    ,'click_info':41
+                    ,'click_courseware':42
+                    ,'click_about':43
+                    ,'click_forum':44
+                    ,'click_progress':45
+                    ,'close_courseware':46}
         
                 _action = replace_dict[_action]
                 list_action[row_num] = _action
@@ -393,6 +434,8 @@ log_np_convert = convert(log_dict,drop_zero = True)
 log_list = dict_to_array(log_np_convert)
 
 plot_histogram(log_list) 
+
+
 # 得到描述序列长度分布的直方图 以确定截断和填充的长度
 
 

@@ -18,7 +18,7 @@ train_data = keras.preprocessing.sequence.pad_sequences(
     ,value= 0.0
     ,padding='post' # 未知
     ,dtype=np.int8
-    ,maxlen=1000    # 单条序列最大长度
+    ,maxlen=200    # 单条序列最大长度 由直方图观察得出
     ) 
 
 # model
