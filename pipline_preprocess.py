@@ -500,7 +500,7 @@ log_col = ['enroll_id','username','course_id','session_id','action','object','ti
 c_info_path = 'course_info.csv'
 c_info_col = ['id','course_id','start','end','course_type','category']
 json_export_path = 'washed_log_list.json'
-json_export_path = 'washed_log_list_2.json'
+
 log_np = load(
     log_path =log_path,
     read_mode ='pandas',
