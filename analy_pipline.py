@@ -134,6 +134,7 @@ def to_int(Sample:list)->list:
     Sample = list(map(lambda x: str(x), Sample))
     return Sample
 
+@_t
 def count_words(Sample:list)-> list:
     '''
         函数功能：根据传入的参数选择相应的方式向量化文本 
@@ -176,7 +177,8 @@ useful_list = cut_toolong_tooshort(log_list,up = 2000,down = 100)
 plot_histogram(useful_list) 
 avg_series_len = find_avg_length_of_series(useful_list)
 Sample = to_int(useful_list)
-
+Sample_Vector = count_words(Sample)
+Sample_Label = k_mean(Sample_Vector)
 
 def ngram_vectorize(train_texts, train_labels, val_texts):
     
@@ -235,4 +237,21 @@ def ngram_vectorize(train_texts, train_labels, val_texts):
     x_val = selector.transform(x_val).astype('float32')
     return x_train, x_val
 
+def k_mean(Sample: list):
+    from sklearn.cluster import KMeans
+
+    num_clusters = 2 #聚为四类，可根据需要修改
+
+    km = KMeans(n_clusters=num_clusters)
+
+    km.fit(Sample_Vector)
+
+    Sample_labels = km.labels_.tolist()
+    return Sample_labels
+
+c = [0,1,2,3]
+Sample_Label = np.array(Sample_Label)
+for i in c:
+    mask = Sample_Label==i
+    print('class ',i,' : ',len(Sample_Label[mask]))
 
