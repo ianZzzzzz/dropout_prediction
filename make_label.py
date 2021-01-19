@@ -499,6 +499,40 @@ def find_avg_length_of_series(log_list: list)->list:
     return mean_
 
 
+def dict_filter(_log:dict,mode:str,**kwargs)-> dict:
+    
+    def length(__log: dict,kwargs)-> dict:
+        
+        if type(_log)!= type(dict(a=1)):
+            return print('ERROR : input log not a dict.')
+
+
+        down_ = int(kwargs['down'])
+        up_   = int(kwargs['up'])
+      
+        useful_dict = {}
+        len_list = []
+
+        for key,value_ in _log.items():
+            len_  = int(len(value_))
+   
+            if ((len_>= down_) & (len_<= up_)):
+          
+                useful_dict[key] = value_
+                len_list.append(len_)
+        
+        import numpy as np
+        print('Length filter finish , average length : ',np.mean(len_list))
+        
+        return useful_dict
+    
+    def test(__log: dict,kwargs)-> dict:
+        print('in function test!')
+        print('kwargs',kwargs,'kwargs[head]',kwargs['head'])
+
+    return eval(mode)(_log,kwargs)
+
+
 log_path = 'D:\\zyh\\data\\prediction_data\\prediction_log\\test_log.csv'
 log_col = ['enroll_id','username','course_id','session_id','action','object','time']
 c_info_path = 'course_info.csv'
@@ -520,6 +554,7 @@ C_INFO_NP = load(
     columns =c_info_col
     )
 
+# wait to run !
 enroll_dict_list_inside = convert(log_dict,drop_zero = True)
 # 導出中間數據 就不用每次都調用原始日志
 mid_writer = read_or_write_json(
@@ -528,32 +563,9 @@ mid_writer = read_or_write_json(
     ,log    = enroll_dict_list_inside)
 
 
-useful_list = cut_toolong_tooshort(log_list,up = 2000,down = 100)
-
 
 log_list = dict_to_array(log_np_convert)
 
-writer = read_or_write_json(
-    path    = json_export_path
-    ,mode   = 'w'
-    ,log    = log_list)
-reader = read_or_write_json(
-    path= json_export_path
-    ,mode = 'r')
-
-
-# use n-gram can use more useful data
-
-plot_histogram(useful_list) 
-
-avg_series_len = find_avg_length_of_series(useful_list)
-# = 393 < 1500 
-# 得到描述序列长度分布的直方图 以确定截断和填充的长度
-
-
-# after_convert_path = 'D:\\zyh\\data\\prediction_data\\after_convert_dict\\test_1.json'
-# BUG ON  to_json(after_convert_path,log_np_convert)
-# TypeError: Object of type ndarray is not JSON serializable
 
 
 

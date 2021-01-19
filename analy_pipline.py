@@ -164,7 +164,17 @@ def tf_idf_width(Sample:list):
     # 编码文档
     vector = vectorizer.transform(Sample)
 
+def k_mean(Sample: list,num_clusters):
+    from sklearn.cluster import KMeans
 
+    #num_clusters = 2 #聚为四类，可根据需要修改
+
+    km = KMeans(n_clusters=num_clusters)
+
+    km.fit(Sample_Vector)
+
+    Sample_labels = km.labels_.tolist()
+    return Sample_labels
 
 json_export_path = 'washed_log_list.json'
 
@@ -178,7 +188,7 @@ plot_histogram(useful_list)
 avg_series_len = find_avg_length_of_series(useful_list)
 Sample = to_int(useful_list)
 Sample_Vector = count_words(Sample)
-Sample_Label = k_mean(Sample_Vector)
+Sample_Label = k_mean(Sample_Vector,5)
 
 def ngram_vectorize(train_texts, train_labels, val_texts):
     
@@ -237,21 +247,8 @@ def ngram_vectorize(train_texts, train_labels, val_texts):
     x_val = selector.transform(x_val).astype('float32')
     return x_train, x_val
 
-def k_mean(Sample: list):
-    from sklearn.cluster import KMeans
-
-    num_clusters = 2 #聚为四类，可根据需要修改
-
-    km = KMeans(n_clusters=num_clusters)
-
-    km.fit(Sample_Vector)
-
-    Sample_labels = km.labels_.tolist()
-    return Sample_labels
-
-c = [0,1,2,3]
 Sample_Label = np.array(Sample_Label)
-for i in c:
+for i in set(Sample_Label):
     mask = Sample_Label==i
     print('class ',i,' : ',len(Sample_Label[mask]))
 

@@ -19,8 +19,6 @@
         
         还未想到该如何量化的改进：action中观看视频的时间长短我觉得是很重要的特征。
         
-        
-
     上周进展 ：
       读取csv数据对其归类存字典 转换成训练数据 
       特征包含：
@@ -424,7 +422,7 @@ def read_or_write_json(
         if type(__log[1])!=type([]):
             # json不支持ndarray
             # 用json导出 array 要先 .tolist() 读取的时候直接np.array()
-            for i in range(len(_log)):
+            for i in range(len(__log)):
                 __log[i] = __log[i].tolist()
 
         json.dump(__log,open(__path,'w'))
@@ -517,6 +515,7 @@ C_INFO_NP = load(
     )
 
 log_np_convert = convert(log_dict,drop_zero = True)
+
 log_list = dict_to_array(log_np_convert)
 
 writer = read_or_write_json(

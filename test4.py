@@ -119,3 +119,46 @@ if 'CI' not in os.environ:
     print("LabelSpreading on 20% of the data (rest is unlabeled):")
     eval_and_print_metrics(ls_pipeline, Sample_train, Label_train, Sample_test, Label_test)
 
+
+
+def dict_filter(_log:dict,mode:str,**kwargs)-> dict:
+    
+    def length(__log: dict,kwargs)-> dict:
+        
+        if type(_log)!= type(dict(a=1)):
+            return print('ERROR : input log not a dict.')
+
+
+        down_ = int(kwargs['down'])
+        up_   = int(kwargs['up'])
+      
+        useful_dict = {}
+        len_list = []
+
+        for key,value_ in _log.items():
+            len_  = int(len(value_))
+   
+            if ((len_>= down_) & (len_<= up_)):
+          
+                useful_dict[key] = value_
+                len_list.append(len_)
+        
+        import numpy as np
+        print('Length filter finish , average length : ',np.mean(len_list))
+        
+        return useful_dict
+    
+    def test(__log: dict,kwargs)-> dict:
+        print('in function test!')
+        print('kwargs',kwargs,'kwargs[head]',kwargs['head'])
+
+    return eval(mode)(_log,kwargs)
+
+
+dict_log = {
+    '101':[11,13],
+    '202':[21,22,23],
+    '113':[1,2,2,1,1,1,1,1,1,1,1],
+    '114':[1,1,1,1,1,1,1,1,11,1,1,1,1,1]}
+
+
