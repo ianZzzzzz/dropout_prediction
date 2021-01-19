@@ -448,7 +448,7 @@ def dict_to_array(dict_log:dict)->list:
                   创建空表，将每次读取到的序列追加进表内 每個序列的'-1'位置為注冊號
         note:   用list append执行很快 np.concatenate慢十倍以上'''
     i = 0
-    print_key = 10000
+    print_key = 100000
     len_ = len(dict_log)
 
     dataset = []
@@ -459,9 +459,7 @@ def dict_to_array(dict_log:dict)->list:
         dataset[i].append(k)
 
         i+=1
-        data = np.array(v)
-      
-       
+        
         if (i%print_key)==0:
             print('already to array ',i,' areas.')
     
