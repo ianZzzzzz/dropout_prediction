@@ -6,50 +6,13 @@
         按照参数切分样本和标签
         打包样本和标签存储为json
 '''
-'''程序功能：
-
-        读取日志文件
-        根据注册号归类数据行
-        以字典方式存储各个注册号下的日志
-        在各注册号下的日志中
-        取时间值最小与最大的行作为时间起始与重点 得出时间序列长度L 单位秒
-        建立长度L 的零数组 将数据行根据时间列的值填充进数组中
-        将数据行action列的数据按照操作名替换表替换为数字 以节省内存
-        
-        '''
-'''
-不足： 
-        数据稀疏
-改进：  
-        权衡了训练速度与特征完整性 决定目前先去除序列中的零
-        所以不保留action间的间隔 只保留acton间的次序 
-            （主观默认间隔长短不如间隔次序重要 
-        
-        还未想到该如何量化的改进：action中观看视频的时间长短我觉得是很重要的特征。
-        
-    上周进展 ：
-      读取csv数据对其归类存字典 转换成训练数据 
-      特征包含：
-        1 不同action 的组合模式与先后模式
-        2 action之间的间隔时间
-        3 用户主要的操作分布在开课时间的哪一部分
-
-     考虑后决定暂不使用特征3 因为使用完整的序列会使得训练样本太稀疏 导致训练缓慢
-
-     编码：
-        怎么选择合适的编码将22种符号特征编码成向量 
-        要求近似的行为编码的余弦相似度等指标也接近
-
-        onehot显然不合适 选择词嵌入方式训练 
-        AAAI19论文的代码中将行为分成了四类，
-
-'''
 
 TEST_OR_NOT = False
 print_batch = int(1000000)
 read_chunk_size  = int(10000) # enable only when TEST_OR_NOT = True
 
-
+label_rate = int(50) # 50 mean's 50%
+PAD_LENGTH = 10
 
 def _import_():
     # preprocess of "log file to time series"
@@ -60,9 +23,6 @@ def _import_():
     from numpy import datetime64
     from pandas import DataFrame
     import numpy as np
-
-_import_()
-
 def _t(function):
     from functools import wraps
     import time
@@ -80,8 +40,6 @@ def _t(function):
         print ('[Function: {name} finished, spent time: {time:.2f}s]'.format(name = function.__name__,time = t1 - t0))
         return result
     return function_timer
-
-@_t
 def plot_histogram(log_list:list):
     '''
         描绘列表中序列长度分布的直方图 
@@ -123,7 +81,6 @@ def plot_histogram(log_list:list):
 
         plt.hist( series, bins =  bins_)
         plt.show() '''
-
 @_t
 def word_counter(log_list:list)-> Dict[str,dict]:
     '''
@@ -151,248 +108,6 @@ def word_counter(log_list:list)-> Dict[str,dict]:
     
     re = {'type':action_type_counter ,'action':action_counter}
     return re
-
-
-"""
-    @_t
-    def load(
-        log_path: str,
-        read_mode: str,
-        return_mode: str,
-        encoding_='utf-8',
-        columns=None,
-        test=TEST_OR_NOT)-> ndarray or DataFrame:
-        '''读取csv文件 返回numpy数组'''
-        #if read_mode == 'cudf':import cudf as pd
-        if read_mode == 'pandas' :
-            import pandas as pd
-            if test ==True: # only read 10000rows 
-                reader = pd.read_csv(
-                    log_path
-                    ,encoding=encoding_
-                    ,names=columns
-                    ,chunksize=read_chunk_size)
-                    
-                for chunk in reader:
-                    # use read_chunk_size to choose the size of test rows instead of loop
-                    log = chunk
-                    return log.values
-
-            else: # read full file
-                log = pd.read_csv(
-                    log_path
-                    ,encoding=encoding_
-                    ,names=columns)
-                
-            print('load running!')
-        if return_mode == 'df':return log
-        if return_mode == 'values':return log.values
-
-    @_t
-    def to_dict_2(
-        log: ndarray
-        ,test=TEST_OR_NOT
-        )-> Dict[str,ndarray]: 
-        '''优化版 时间复杂度低'''
-        print('find ',len(log),' row logs')
-        i = 0
-        log_dict = {}
-        for row in log:
-            area = row[0]
-            data = row[[1,2,3]]
-            #print('area: ',area,' data: ',data)
-            
-            # if log_dict[]里没数据：初始化=[]
-            try:
-                log_dict[area].append(data)
-            except:
-                log_dict[area] = []
-                log_dict[area].append(data)
-                #print(log_dict[area])
-            i+=1
-            if (i%print_batch)==0:print('already dict : ',i,'row logs')
-            if (test == True) and (i ==print_batch):return log_dict
-        return log_dict
-
-    @_t
-    def convert(
-        log: dict 
-        ,drop_zero: bool
-        ,testing=TEST_OR_NOT
-        )->dict: 
-        print('dict total len :',len(log))
-        print(' convert running!')
-        
-        import numpy as np
-        
-        def find_start_end(c_id:str)->Dict[int,datetime64]:
-
-            ''' 根据course_id 查询课程的总耗时秒数 以及开始时间并返回
-                函数调用了全局变量C_INFO_NP必须在课程信息被加载后才能运行'''
-            mask = C_INFO_NP[:,1] == c_id
-
-            start = C_INFO_NP[mask][:,2]
-            end   = C_INFO_NP[mask][:,3]
-            #type: object ['2016-11-16 08:00:00']
-            start = str(start)
-            end = str(end)
-            #type: str ['2016-11-16 08:00:00']
-            start = start[2:-2]
-            end = end[2:-2]
-            #type: str '2016-11-16 08:00:00'
-            try:
-                end = np.datetime64(end) 
-                start = np.datetime64(start)
-                seconds_of_gap = int((end - start).item().total_seconds())
-            except:print('ERROR start,end :',start,end)
-            time_info = {
-                'length': seconds_of_gap
-                ,'head' : start}
-            return time_info
-        
-        def time_map(log_np:ndarray)->ndarray:
-            ''' 本函数功能：
-                        将以秒数为索引的不确定顺序nparray 
-                        映射到按秒数排序的ndarray 
-                        返回值近保留有序的action序列
-                BUG日志：
-                        20210113pm 
-                        原始数据中存在错误的时间格式
-                        本map函数遇到错误格式直接忽略本循环
-                        会导致错误行的action值为 b''
-                        进而导致int（）转换出错
-                        报错：ValueError: invalid literal for int() 
-                                with base 10: ''
-                        解决方案： 在字符替换表中先判断若为b'' 则先替换为b'0'
-                        '''
-            '''action_series改成无零的action有序表 '''
-            
-            ''' def to_int(x):
-                    x = int(x)
-                    return x
-                md = map(to_int,log_np[:,1]) 
-                __time = list(md) # time list'''
-        
-            '''    time_column = log_np[:,1]
-                for __row in range(len(time_column)):
-                    try:
-                        time_column[__row] = int(time_column[__row])
-                    except: 
-                        print(' e_id in log :',e_id,'row number :',__row)
-
-                __time = time_column'''
-
-            __time = log_np[:,1].astype('int')
-
-            __head = np.min(__time)
-            __tail = np.max(__time)
-            __length = __tail - __head +1
-            action_series = np.zeros((__length,1),dtype=np.uint8)
-
-            for row in log_np:
-                __t = int(row[1]) # time now
-                __location = __t - __head
-                action_series[__location] = row[0]
-            if drop_zero == True:
-                mask = action_series!= np.uint8(0)
-                action_series = action_series[mask]
-
-            return action_series
-        
-        i = 0
-        new_dict = {}
-        for e_id ,v in log.items():
-            i+=1
-        
-            if (i%int(1000))==0:
-                print('already convert ',i,' e_id ')
-
-            # 遍历字典 
-            # type(v)==list
-            v = np.array(v)
-            c_id = v[0,2] 
-            # 上一函数为了方便 保留了每一行的course_id 此处只需要一个值
-            _log       = v[:,[0,1]]
-            time_col   = _log[:,1]
-            action_col = _log[:,0] 
-            
-            time_info   = find_start_end(c_id)
-            time_head   = time_info['head']
-            time_length = time_info['length']
-
-            list_time   = np.zeros((len(_log),1),dtype = np.uint32)
-            list_action = np.zeros((len(_log),1),dtype = 'a32') # a32 存32个英文字符
-            
-
-            for row_num in range(len(_log)):
-                ''' 为了对action做进一步编码 保留了action接口 '''
-
-                _row = _log[row_num,:]
-                _time = _row[1]
-                _action = _row[0]
-                
-
-                try:
-                    _time = np.datetime64(_time)
-                    _time =  int(
-                        ( _time - time_head ).item().total_seconds() )
-                    
-                    list_time[row_num] = _time
-                    # 为了省内存 将不同的action用数字代替 都是符号 不影响数据特征 
-                    replace_dict = {
-                        # video
-                        'seek_video': 11
-                        ,'play_video':12
-                        ,'pause_video':13
-                        ,'stop_video':14
-                        ,'load_video':15
-                        # problem
-                        ,'problem_get':21
-                        ,'problem_check':22
-                        ,'problem_save':23
-                        ,'reset_problem':24
-                        ,'problem_check_correct':25
-                        , 'problem_check_incorrect':26
-                        # comment
-                        ,'create_thread':31
-                        ,'create_comment':32
-                        ,'delete_thread':33
-                        ,'delete_comment':34
-                        # click
-                        ,'click_info':41
-                        ,'click_courseware':42
-                        ,'click_about':43
-                        ,'click_forum':44
-                        ,'click_progress':45
-                        ,'close_courseware':46}
-                    
-                    if _action in replace_dict:
-                        _action = replace_dict[_action]
-                    else:
-                        _action = b'0'
-                    list_action[row_num] = _action
-
-                except:
-                    print('ERROR log time [_time] :',_time)
-                    
-                    print('list_time :',list_time,'list_action :',list_action)
-                    
-            
-            rebulid = np.concatenate( (list_action, list_time), axis = 1)
-            
-            '''出于保留 ‘用户主要的操作分布在开课时间的哪一部分’ 这一特征 
-                的目的，将时间转换部分分为两部分写，后期如需重建此特征以上的代码可以不动'''
-
-            action_series = time_map(rebulid) # ndarray
-
-            new_dict[e_id] =  action_series.tolist() # list for dump
-            
-            
-        return new_dict
-"""
-
-
-
 @_t
 def read_or_write_json(
     path:str
@@ -416,8 +131,6 @@ def read_or_write_json(
         return _dict
 
     return eval(mode)(log,path)
-
-
 def dict_to_array(dict_log:dict)->list:
 
     ''' ->list
@@ -443,7 +156,6 @@ def dict_to_array(dict_log:dict)->list:
     print('Append finsih , dataset include ',len(dataset),' samples')
 
     return dataset
-
 def cut_toolong_tooshort(
     log_list: list
     ,up:int
@@ -474,8 +186,6 @@ def find_avg_length_of_series(log_list: list)->list:
     series = len_array
     mean_ = np.mean(series)
     return mean_
-
-
 def dict_filter(_log:dict,mode:str,**kwargs)-> dict:
     ''' ->dict
         函数功能：按参数筛选字典中的数据
@@ -516,8 +226,6 @@ def dict_filter(_log:dict,mode:str,**kwargs)-> dict:
         print('kwargs',kwargs,'kwargs[head]',kwargs['head'])
 
     return eval(mode)(_log,kwargs)
-
-
 def split_label(_log: list,label_rate:int)-> list:
     dataset = []
       # [
@@ -538,48 +246,65 @@ def split_label(_log: list,label_rate:int)-> list:
         dataset.append([
             int(index_), data, label ])
 
+
     return dataset
 
+def pad_series(dataset:list,pad_length = PAD_LENGTH)->list:
+        
+    import tensorflow as tf
+    from tensorflow import keras
+    import numpy as np
+    print(tf.__version__)
 
-log_path = 'D:\\zyh\\data\\prediction_data\\prediction_log\\test_log.csv'
-log_col = ['enroll_id','username','course_id','session_id','action','object','time']
-c_info_path = 'course_info.csv'
-c_info_col = ['id','course_id','start','end','course_type','category']
+    enroll_id_list = []
+    history_list = []
+    future_list = []
+
+    for sample in dataset:
+        enroll_id      = int(sample[0] )
+        history_s = sample[1]
+        future_s  = sample[2]
+
+        history_list.append(history_s)
+        future_list.append(future_s)
+        enroll_id_list.append(enroll_id)
+
+
+    pad_er = keras.preprocessing.sequence.pad_sequences
+    
+    pad_history = pad_er(
+        history_list
+        ,value= int(0)
+        ,padding='post' # 未知
+        ,dtype=np.uint8
+        ,maxlen=PAD_LENGTH   # 单条序列最大长度 由直方图观察得出
+        ) 
+    
+    pad_future = pad_er(
+        future_list
+        ,value= int(0)
+        ,padding='post' # 未知
+        ,dtype=np.uint8
+        ,maxlen=PAD_LENGTH   # 单条序列最大长度 由直方图观察得出
+        ) 
+
+    dataset = [
+        enroll_id_list,
+        history_list,
+        future_list]
+    return  dataset
+
+_import_()
 json_export_path = 'mid_export_enroll_dict.json'
 
-log_np = load(
-    log_path =log_path,
-    read_mode ='pandas',
-    return_mode = 'values',
-    encoding_ = 'utf-8',
-    columns =log_col)
-log_dict = to_dict_2( log_np[1:,[0,4,6,2]]) # e_id action time c_id
-C_INFO_NP = load(
-    log_path =c_info_path,
-    read_mode ='pandas',
-    return_mode = 'values',
-    encoding_ = 'utf-8',
-    columns =c_info_col
-    )
-
-
-enroll_dict_list_inside = convert(log_dict,drop_zero = True)
-
-# 導出中間數據 就不用每次都調用原始日志
-
-mid_writer = read_or_write_json(
-    path    = json_export_path
-    ,mode   = 'w'
-    ,log    = enroll_dict_list_inside)
-
-mid_reader = read_or_write_json(
+enroll_dict_list_inside = read_or_write_json(
     path    = json_export_path
     ,mode   = 'r')
 
-enroll_dict_list_inside = mid_reader
-
 array = dict_to_array(enroll_dict_list_inside)
-dataset = split_label(array,50)
+dataset = split_label(array,label_rate)
+
+pad_dataset = pad_series(test)
 
 
 
