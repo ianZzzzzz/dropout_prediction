@@ -4,21 +4,22 @@
 
              
 '''
-import json
-json_dict_path = ' '
-log = json.load(open(json_dict_path))
+log #dict from json
+
+
 
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 print(tf.__version__)
 
+
 train_data = keras.preprocessing.sequence.pad_sequences(
     train_data
     ,value= 0.0
     ,padding='post' # 未知
     ,dtype=np.int8
-    ,maxlen=200    # 单条序列最大长度 由直方图观察得出
+    ,maxlen=10   # 单条序列最大长度 由直方图观察得出
     ) 
 
 # model
@@ -32,7 +33,7 @@ model.add(keras.layers.Dense(16, activation='relu'))
 model.add(keras.layers.Dense(1, activation='sigmoid'))
 
 model.summary()
-#
+# 
 model.compile(optimizer='adam',
               loss='binary_crossentropy',
               metrics=['accuracy'])

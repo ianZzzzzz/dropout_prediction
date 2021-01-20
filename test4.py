@@ -154,11 +154,97 @@ def dict_filter(_log:dict,mode:str,**kwargs)-> dict:
 
     return eval(mode)(_log,kwargs)
 
+def dict_to_array(dict_log:dict)->list:
 
-dict_log = {
-    '101':[11,13],
-    '202':[21,22,23],
-    '113':[1,2,2,1,1,1,1,1,1,1,1],
-    '114':[1,1,1,1,1,1,1,1,11,1,1,1,1,1]}
+    ''' 函数功能:   归类后的数据被存储为dict格式 需要将其转换为list以制作数据集
+                  创建空表，将每次读取到的序列追加进表内 每個序列的'-1'位置為注冊號
+        note:   用list append执行很快 np.concatenate慢十倍以上'''
+    i = 0
+    print_key = 100000
+    len_ = len(dict_log)
+
+    dataset = []
+
+    for k,v in dict_log.items():
+        
+        dataset.append(v)
+        dataset[i].append(k)
+
+        i+=1
+        
+        if (i%print_key)==0:
+            print('already to array ',i,' areas.')
+    
+    print('Append finsih , dataset include ',len(dataset),' samples')
+
+    return dataset
+
+def split_label(_log: list,label_rate:int)-> list:
+    dataset = []
+      # [
+      #  ['id1','data','label'],
+      #  ['id2','data','label']
+      # ]
+
+    for series in _log:
+        series__ = series[:-1]
+        index_ = series[-1]
+        
+        len_ = len(series__)
+        split_point = int(0.01*(100-label_rate)*len_)
+
+        data  = series__[:split_point]
+        label = series__[split_point:]
+
+        dataset.append([
+            int(index_),
+            data,
+            label
+            ])
+
+    return dataset
 
 
+from typing import List, Dict
+def read_or_write_json(
+    path:str
+    ,mode:str
+    ,log: Dict[int,list]):
+    ''' 读写json文件
+        mode控制 read or write
+    '''
+    import json
+    def w(__log,__path):
+        print('w')
+        if type(__log)!=type(dict):
+            print('ERROR : input data not a dict!')
+        else:
+            print('dump')
+            json.dump(__log,open(__path,'w'))
+            print('SUCCESS WRITE , path ：', __path)
+        return None
+
+    def r(__log,__path)->Dict[int,list]:
+        _dict = json.load(open(__path,'r'))
+        return _dict
+
+    return eval(mode)(log,path)
+
+
+def w(__log,__path):
+    
+    print('w')
+    if type(__log)!=type({}):
+        print('ERROR : input data not a dict!')
+    else:
+        print('dump')
+        json.dump(__log,open(__path,'w'))
+        print('SUCCESS WRITE , path ：', __path)
+    return None
+
+__log = t
+__path = 'a_test.json'
+
+t = {'776':[1,221,212,2]}
+
+w(__log = t,__path = 'a_test.json')
