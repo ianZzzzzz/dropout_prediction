@@ -85,6 +85,20 @@ def plot_histogram(log_list:list):
 def word_counter(log_list:list)-> Dict[str,dict]:
     '''
         计算单词频次
+        return : re = {
+            'type':action_type_counter ,
+            'action':action_counter}
+
+        action_type_counter = { '1':0,  '2':0, '3':0, '4':0 }
+
+        action_counter = {
+            11:0,12:0,13:0,14:0,15:0       # video
+            ,21:0,22:0,23:0,24:0,25:0,26:0  # problem
+            ,31:0,32:0,33:0,34:0            # common
+            ,41:0,42:0,43:0,44:0,45:0,46:0  # click
+            }
+
+        
     '''
     from matplotlib import pyplot as plt 
     import numpy as np
@@ -114,7 +128,10 @@ def read_or_write_json(
     ,mode:str
     ,log=None):
     ''' 读写json文件
-        mode控制 read or write
+        
+        mode== 'r' -> read  return dict (enroll_id : log_list)
+
+        mode=='w' -> write return None
     '''
     import json
 
@@ -130,12 +147,20 @@ def read_or_write_json(
         _dict = json.load(open(__path,'r'))
         return _dict
 
-    return eval(mode)(log,path)
+    return eval(mode)(log,path)  
 def dict_to_array(dict_log:dict)->list:
 
-    ''' ->list
-        函数功能:   归类后的数据被存储为dict格式 需要将其转换为list以制作数据集
-                  创建空表，将每次读取到的序列追加进表内 每個序列的'-1'位置為注冊號
+    ''' 
+        函数功能:
+            将dict格式数据集转换为list格式数据集
+        
+        return：list ( [ 
+                    [log_list_1,enroll_id_1],
+                    [log_list_2,enroll_id_2],
+                    [log_list_n,enroll_id_n] ])
+
+                -1位置为dict数据集的key —>enroll_id 
+
         note:   用list append执行很快 np.concatenate慢十倍以上'''
     i = 0
     print_key = 100000
@@ -156,27 +181,32 @@ def dict_to_array(dict_log:dict)->list:
     print('Append finsih , dataset include ',len(dataset),' samples')
 
     return dataset
-def cut_toolong_tooshort(
-    log_list: list
-    ,up:int
-    ,down:int
-    )-> list:
-    '''
-       本函数根据设定的上下限 返回长度在上下限之间的序列构成的list
-       
-    '''
-
-    uesful_series = []
-    useless_series = []
-    for series in log_list:
-        length = len(series)
+def list_filter(log_list:list)->list:
         
-        if (length>down)and(length<up):
-            uesful_series.append(series)
-        else: 
-            useless_series.append(series)
-    
-    return uesful_series
+    def cut_toolong_tooshort(
+        log_list: list
+        ,up:int
+        ,down:int
+        )-> list:
+        '''
+        函数功能：
+            根据设定的上下限 返回长度在上下限之间的序列构成的list
+        
+        '''
+
+        uesful_series = []
+        useless_series = []
+        for series in log_list:
+            length = len(series)
+            
+            if (length>down)and(length<up):
+                uesful_series.append(series)
+            else: 
+                useless_series.append(series)
+        
+        return uesful_series
+
+    log_list = cut_toolong_tooshort(log_list,up= int(10),down = int(2))
 def find_avg_length_of_series(log_list: list)->list:
     len_array = np.zeros( len(log_list)+1,dtype = np.uint32)
     for i in range(len(log_list)):
@@ -227,11 +257,15 @@ def dict_filter(_log:dict,mode:str,**kwargs)-> dict:
 
     return eval(mode)(_log,kwargs)
 def split_label(_log: list,label_rate:int)-> list:
+    '''
+        函数功能： 将样本序列按照指定的比例 分割为历史序列 和 未来序列
+        return: dataset = [ 
+                    ['id1','data','label'],
+                   ['id2','data','label']
+                 ]
+    '''
     dataset = []
-      # [
-      #  ['id1','data','label'],
-      #  ['id2','data','label']
-      # ]
+      
 
     for series in _log:
         series__ = series[:-1]
@@ -250,7 +284,12 @@ def split_label(_log: list,label_rate:int)-> list:
     return dataset
 
 def pad_series(dataset:list,pad_length = PAD_LENGTH)->list:
-        
+    '''
+        函数功能： 按照参数将所有样本序列填充为相同长度
+        return： dataset = [enroll_id_list,
+                            history_list,
+                             future_list]
+    '''    
     import tensorflow as tf
     from tensorflow import keras
     import numpy as np
