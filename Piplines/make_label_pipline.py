@@ -7,6 +7,12 @@
         打包样本和标签存储为json
 '''
 
+from typing import List, Dict
+
+from numpy import ndarray
+from numpy import datetime64
+
+    
 TEST_OR_NOT = False
 print_batch = int(1000000)
 read_chunk_size  = int(10000) # enable only when TEST_OR_NOT = True
@@ -14,15 +20,6 @@ read_chunk_size  = int(10000) # enable only when TEST_OR_NOT = True
 label_rate = int(50) # 50 mean's 50%
 PAD_LENGTH = 10
 
-def _import_():
-    # preprocess of "log file to time series"
-    import pandas as pd
-    # import cudf as pd # nvidia GPU only # !pip install cudf 
-    from typing import List, Dict
-    from numpy import ndarray
-    from numpy import datetime64
-    from pandas import DataFrame
-    import numpy as np
 def _t(function):
     from functools import wraps
     import time
@@ -284,12 +281,13 @@ def split_label(_log: list,label_rate:int)-> list:
     return dataset
 
 def pad_series(dataset:list,pad_length = PAD_LENGTH)->list:
-    '''
-        函数功能： 按照参数将所有样本序列填充为相同长度
-        return： dataset = [enroll_id_list,
-                            history_list,
-                             future_list]
-    '''    
+
+    """[按照参数将所有样本序列填充为相同长度]
+
+    Returns:
+        [list]: [ enroll_id_list,history_list,future_list ]
+    """    
+      
     import tensorflow as tf
     from tensorflow import keras
     import numpy as np
@@ -308,7 +306,7 @@ def pad_series(dataset:list,pad_length = PAD_LENGTH)->list:
         future_list.append(future_s)
         enroll_id_list.append(enroll_id)
 
-
+    
     pad_er = keras.preprocessing.sequence.pad_sequences
     
     pad_history = pad_er(
@@ -333,8 +331,8 @@ def pad_series(dataset:list,pad_length = PAD_LENGTH)->list:
         future_list]
     return  dataset
 
-_import_()
-json_export_path = 'mid_export_enroll_dict.json'
+
+json_export_path = 'Piplines\\mid_export_enroll_dict.json'
 
 enroll_dict_list_inside = read_or_write_json(
     path    = json_export_path
@@ -343,11 +341,4 @@ enroll_dict_list_inside = read_or_write_json(
 array = dict_to_array(enroll_dict_list_inside)
 dataset = split_label(array,label_rate)
 
-pad_dataset = pad_series(test)
-
-
-
-
-
-
-
+# pad_dataset = pad_series(test)
