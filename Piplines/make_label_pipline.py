@@ -19,6 +19,7 @@ read_chunk_size  = int(10000) # enable only when TEST_OR_NOT = True
 
 label_rate = int(50) # 50 mean's 50%
 PAD_LENGTH = 10
+SAMPLE_LEN = PAD_LENGTH
 
 def _t(function):
     from functools import wraps
@@ -145,7 +146,7 @@ def read_or_write_json(
         return _dict
 
     return eval(mode)(log,path)  
-def dict_to_array(dict_log:dict)->list:
+def dict_to_array(dict_log:dict,drop_key = False)->list:
 
     ''' 
         函数功能:
@@ -164,20 +165,27 @@ def dict_to_array(dict_log:dict)->list:
     len_ = len(dict_log)
 
     dataset = []
+    if drop_key == False:
+        print('Inclouding enroll id in [-1] position.')
 
-    for k,v in dict_log.items():
+        for k,v in dict_log.items():
+            
+            dataset.append(v)
+            
+            i+=1
+    else:
+        print(' Series data only.')
         
-        dataset.append(v)
-        dataset[i].append(k)
+        for k,v in dict_log.items():
+            v = v[:-1]
+            dataset.append(v)
 
-        i+=1
-        
-        if (i%print_key)==0:
-            print('already to array ',i,' areas.')
-    
+            i+=1
+
     print('Append finsih , dataset include ',len(dataset),' samples')
 
     return dataset
+
 def list_filter(log_list:list)->list:
         
     def cut_toolong_tooshort(
@@ -253,7 +261,7 @@ def dict_filter(_log:dict,mode:str,**kwargs)-> dict:
         print('kwargs',kwargs,'kwargs[head]',kwargs['head'])
 
     return eval(mode)(_log,kwargs)
-def split_label(_log: list,label_rate:int)-> list:
+def split_label(_log: list,label_rate:int,drop_key=False)-> list:
     '''
         函数功能： 将样本序列按照指定的比例 分割为历史序列 和 未来序列
         return: dataset = [ 
@@ -263,19 +271,33 @@ def split_label(_log: list,label_rate:int)-> list:
     '''
     dataset = []
       
+    if drop_key==False:
+        print('Including enroll id at [0] positon.')
+        for series in _log:
+            series__ = series[:-1]
+            index_ = series[-1]
+            
+            len_ = len(series__)
+            split_point = int(0.01*(100-label_rate)*len_)
 
-    for series in _log:
-        series__ = series[:-1]
-        index_ = series[-1]
-        
-        len_ = len(series__)
-        split_point = int(0.01*(100-label_rate)*len_)
+            data  = series__[:split_point]
+            label = series__[split_point:]
 
-        data  = series__[:split_point]
-        label = series__[split_point:]
+            dataset.append([
+                int(index_), data, label ])
+    else:   
+        print(' Series data only.')
+        for series in _log:
+            series__ = series[:-1]
+           # index_ = series[-1]
+            
+            len_ = len(series__)
+            split_point = int(0.01*(100-label_rate)*len_)
 
-        dataset.append([
-            int(index_), data, label ])
+            data  = series__[:split_point]
+            label = series__[split_point:]
+
+            dataset.append([ data, label ])
 
 
     return dataset
@@ -338,7 +360,144 @@ enroll_dict_list_inside = read_or_write_json(
     path    = json_export_path
     ,mode   = 'r')
 
-array = dict_to_array(enroll_dict_list_inside)
-dataset = split_label(array,label_rate)
+array = dict_to_array(enroll_dict_list_inside,drop_key= False)
+non_id_array = dict_to_array(enroll_dict_list_inside,drop_key= True)
+
+dataset = split_label(array,label_rate,drop_key=False)
+non_id_dataset = split_label(non_id_array,label_ratedrop_key=True)
 
 # pad_dataset = pad_series(test)
+
+
+
+
+import tensorflow as tf
+
+import numpy as np
+import os
+import time
+
+text = np.array(non_id_array[1],dtype = 'str').tolist()
+
+text = np.array(,dtype = 'str').tolist()
+
+vocab = sorted(set(text))
+print ('{} unique characters'.format(len(vocab)))
+
+char2idx = {u:i for i, u in enumerate(vocab)}
+idx2char = np.array(vocab)
+
+text_as_int = np.array([char2idx[c] for c in text])
+
+seq_length = 100
+examples_per_epoch = len(text)//seq_length
+
+# 创建训练样本 / 目标
+char_dataset = tf.data.Dataset.from_tensor_slices(text_as_int)
+
+for i in char_dataset.take(1):
+    print(idx2char[i.numpy()])
+
+
+# 设置 batch大小
+sequences = char_dataset.batch(seq_length+1, drop_remainder=True)
+# show 5 batch
+for item in sequences.take(1):
+  print(item.numpy(),len(item.numpy()))
+
+
+def split_input_target(chunk):
+    input_text = chunk[:-1]
+    target_text = chunk[1:]
+    
+    return input_text, target_text
+
+x = map(split_input_target,sequences)
+
+dataset = sequences.map(split_input_target)
+
+#show a sample
+for input_example, target_example in  dataset.take(1):
+    print ('Input data: ', input_example.numpy())
+    print ('Target data:', target_example.numpy())
+
+# shuffle
+# 批大小
+BATCH_SIZE = 64
+
+# 设定缓冲区大小，以重新排列数据集
+# （TF 数据被设计为可以处理可能是无限的序列，
+# 所以它不会试图在内存中重新排列整个序列。相反，
+# 它维持一个缓冲区，在缓冲区重新排列元素。） 
+BUFFER_SIZE = 100
+
+dataset = dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE, drop_remainder=True)
+
+dataset
+
+# 词集的长度
+
+'''
+    vocab = [
+        11,12,13,14,15
+        ,21,22,23,24,25,26
+        ,31,32,33,34
+        ,41,42,43,44,45,46,
+        0]'''
+
+vocab_size = len(vocab)
+
+# 嵌入的维度
+embedding_dim = int(256/4)
+
+# RNN 的单元数量
+rnn_units = int(1024/4)
+
+def build_model(
+    vocab_size, 
+    embedding_dim, 
+    rnn_units, 
+    batch_size):
+    model = tf.keras.Sequential(
+        [
+            tf.keras.layers.Embedding(
+                vocab_size, 
+                embedding_dim,
+                batch_input_shape=[batch_size, None]),
+            tf.keras.layers.GRU(
+                rnn_units,
+                return_sequences=True,
+                stateful=True,
+                recurrent_initializer='glorot_uniform'),
+            tf.keras.layers.Dense(vocab_size)
+        ])
+    return model
+
+model = build_model(
+    vocab_size = len(vocab),
+    embedding_dim=embedding_dim,
+    rnn_units=rnn_units,
+    batch_size=BATCH_SIZE)
+
+# run test 
+#BUG
+
+
+for input_example_batch, target_example_batch in dataset.take(1):
+  example_batch_predictions = model(input_example_batch)
+  print(example_batch_predictions.shape, "# (batch_size, sequence_length, vocab_size)")
+
+# FIX
+
+example_batch_predictions = model(x[1][0].numpy())
+
+model.summary()
+
+sampled_indices = tf.random.categorical(example_batch_predictions[0], num_samples=1)
+sampled_indices = tf.squeeze(sampled_indices,axis=-1).numpy()
+
+X
+for i in range(100):
+    x.append(x)
+
+x
