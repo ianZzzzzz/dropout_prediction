@@ -103,10 +103,10 @@ def word_counter(log_list:list)-> Dict[str,dict]:
 
     action_type_counter = { '1':0,  '2':0, '3':0, '4':0 }
     action_counter = {
-        11:0,12:0,13:0,14:0,15:0       # video
-        ,21:0,22:0,23:0,24:0,25:0,26:0  # problem
-        ,31:0,32:0,33:0,34:0            # common
-        ,41:0,42:0,43:0,44:0,45:0,46:0  # click
+        '11':0,'12':0,'13':0,'14':0,'15':0       # video
+        ,'21':0,'22':0,'23':0,'24':0,'25':0,'26':0  # problem
+        ,'31':0,'32':0,'33':0,'34':0            # common
+        ,'41':0,'42':0,'43':0,'44':0,'45':0,'46':0  # click
         }
     for i in range(len(log_list)):
 
@@ -370,134 +370,3 @@ non_id_dataset = split_label(non_id_array,label_ratedrop_key=True)
 
 
 
-
-import tensorflow as tf
-
-import numpy as np
-import os
-import time
-
-text = np.array(non_id_array[1],dtype = 'str').tolist()
-
-text = np.array(,dtype = 'str').tolist()
-
-vocab = sorted(set(text))
-print ('{} unique characters'.format(len(vocab)))
-
-char2idx = {u:i for i, u in enumerate(vocab)}
-idx2char = np.array(vocab)
-
-text_as_int = np.array([char2idx[c] for c in text])
-
-seq_length = 100
-examples_per_epoch = len(text)//seq_length
-
-# 创建训练样本 / 目标
-char_dataset = tf.data.Dataset.from_tensor_slices(text_as_int)
-
-for i in char_dataset.take(1):
-    print(idx2char[i.numpy()])
-
-
-# 设置 batch大小
-sequences = char_dataset.batch(seq_length+1, drop_remainder=True)
-# show 5 batch
-for item in sequences.take(1):
-  print(item.numpy(),len(item.numpy()))
-
-
-def split_input_target(chunk):
-    input_text = chunk[:-1]
-    target_text = chunk[1:]
-    
-    return input_text, target_text
-
-x = map(split_input_target,sequences)
-
-dataset = sequences.map(split_input_target)
-
-#show a sample
-for input_example, target_example in  dataset.take(1):
-    print ('Input data: ', input_example.numpy())
-    print ('Target data:', target_example.numpy())
-
-# shuffle
-# 批大小
-BATCH_SIZE = 64
-
-# 设定缓冲区大小，以重新排列数据集
-# （TF 数据被设计为可以处理可能是无限的序列，
-# 所以它不会试图在内存中重新排列整个序列。相反，
-# 它维持一个缓冲区，在缓冲区重新排列元素。） 
-BUFFER_SIZE = 100
-
-dataset = dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE, drop_remainder=True)
-
-dataset
-
-# 词集的长度
-
-'''
-    vocab = [
-        11,12,13,14,15
-        ,21,22,23,24,25,26
-        ,31,32,33,34
-        ,41,42,43,44,45,46,
-        0]'''
-
-vocab_size = len(vocab)
-
-# 嵌入的维度
-embedding_dim = int(256/4)
-
-# RNN 的单元数量
-rnn_units = int(1024/4)
-
-def build_model(
-    vocab_size, 
-    embedding_dim, 
-    rnn_units, 
-    batch_size):
-    model = tf.keras.Sequential(
-        [
-            tf.keras.layers.Embedding(
-                vocab_size, 
-                embedding_dim,
-                batch_input_shape=[batch_size, None]),
-            tf.keras.layers.GRU(
-                rnn_units,
-                return_sequences=True,
-                stateful=True,
-                recurrent_initializer='glorot_uniform'),
-            tf.keras.layers.Dense(vocab_size)
-        ])
-    return model
-
-model = build_model(
-    vocab_size = len(vocab),
-    embedding_dim=embedding_dim,
-    rnn_units=rnn_units,
-    batch_size=BATCH_SIZE)
-
-# run test 
-#BUG
-
-
-for input_example_batch, target_example_batch in dataset.take(1):
-  example_batch_predictions = model(input_example_batch)
-  print(example_batch_predictions.shape, "# (batch_size, sequence_length, vocab_size)")
-
-# FIX
-
-example_batch_predictions = model(x[1][0].numpy())
-
-model.summary()
-
-sampled_indices = tf.random.categorical(example_batch_predictions[0], num_samples=1)
-sampled_indices = tf.squeeze(sampled_indices,axis=-1).numpy()
-
-X
-for i in range(100):
-    x.append(x)
-
-x

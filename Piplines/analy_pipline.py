@@ -167,8 +167,7 @@ def tf_idf_width(Sample:list):
 def k_mean(Sample: list,num_clusters):
     from sklearn.cluster import KMeans
 
-    #num_clusters = 2 #聚为四类，可根据需要修改
-
+   
     km = KMeans(n_clusters=num_clusters)
 
     km.fit(Sample_Vector)
@@ -176,13 +175,20 @@ def k_mean(Sample: list,num_clusters):
     Sample_labels = km.labels_.tolist()
     return Sample_labels
 
+
+
+
 json_export_path = 'washed_log_list.json'
 
 reader = read_or_write_json(
     path= json_export_path
     ,mode = 'r')
 log_list = reader
+
+
+
 useful_list = cut_toolong_tooshort(log_list,up = 2000,down = 100)
+
 # use n-gram can use more useful data
 plot_histogram(useful_list) 
 avg_series_len = find_avg_length_of_series(useful_list)
