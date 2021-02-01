@@ -15,7 +15,7 @@ raw_log_from_csv = [
     ,[991,2221973,'course-v1:TsinghuaX+70800232X+2015_T2','5f421f644193c2d48c84df42aaf7e48b','play_video','3169d758ee2d4262b07f0113df743c42','2015-10-11T11:13:20']
     ,[101,2122312,'art:TsinghuaX+70800232X+2015_T2','5f421f644193c2d48c84df42aaf7e48b','click_courseware','2121d758ee2d4262b07f0113df743a11','2015-11-10T28:32:10']
     ,[101,2122312,'art:TsinghuaX+70800232X+2015_T2','5f421f644193c2d48c84df42aaf7e48b','close_courseware','2121d758ee2d4262b07f0113df743a11','2015-11-10T28:34:10']
-    ]
+    ] 
 
 raw_log_column_type ={
     'enroll_id'  :'int'
