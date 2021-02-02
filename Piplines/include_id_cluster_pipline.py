@@ -48,8 +48,9 @@ def read_or_write_json(
         _dict = json.load(open(__path,'r'))
         return _dict
 
-    return eval(mode)(log,path)  
-def dict_to_array(dict_log:dict,drop_key = False)->list:
+    return eval(mode)(log,path) 
+ 
+def dict_to_list(dict_log:dict,drop_key = False)->list:
 
     ''' 
         函数功能:
@@ -72,7 +73,7 @@ def dict_to_array(dict_log:dict,drop_key = False)->list:
         print('Inclouding enroll id in [-1] position.')
 
         for k,v in dict_log.items():
-            
+            v.append(int(k))
             dataset.append(v)
             
             i+=1
@@ -80,90 +81,73 @@ def dict_to_array(dict_log:dict,drop_key = False)->list:
         print(' Series data only.')
         
         for k,v in dict_log.items():
-            v = v[:-1]
             dataset.append(v)
-
             i+=1
 
     print('Append finsih , dataset include ',len(dataset),' samples')
 
     return dataset
 
-def cut_toolong_tooshort(
-    log_list: list
-    ,up:int
-    ,down:int
-    )-> list:
-    '''
-       本函数根据设定的上下限 返回长度在上下限之间的序列构成的list
-       
-    '''
 
-    uesful_series = []
-    useless_series = []
-    for series in log_list:
-        length = len(series)
-        
-        if (length>down)and(length<up):
-            uesful_series.append(series)
-        else: 
-            useless_series.append(series)
-    
-    return uesful_series
-def find_avg_length_of_series(log_list: list)->list:
-    len_array = np.zeros( len(log_list)+1,dtype = np.uint32)
-    for i in range(len(log_list)):
-        length =  len(log_list[i])
-        len_array[i] = length
+def list_filter(_log:list,mode:str,**kwargs)-> list:
+    """按参数筛选字典中的数据
 
-    series = len_array
-    mean_ = np.mean(series)
-    return mean_
-def plot_histogram(log_list:list):
-    '''
-        描绘列表中序列长度分布的直方图 
-    '''
-    from matplotlib import pyplot as plt 
-    import numpy as np
-    plt.hist([len(s) for s in log_list], bins = 100) # 横坐标精度
+    Args:
+        _log (list): [log]
+        mode (str): [筛选模式]
 
-    plt.xlabel('Length of a sample')
-    plt.ylabel('Number of samples')
-    plt.title('Sample length distribution')
-    plt.show()
-
-    ''' 细节版
+    Returns:
+        list: [log]
+    """    
+    def find_avg_length_of_series(log_list: list)->int:
         len_array = np.zeros( len(log_list)+1,dtype = np.uint32)
         for i in range(len(log_list)):
             length =  len(log_list[i])
             len_array[i] = length
 
-        series = len_array
-
-        min_ = int(np.min(series))
-        max_ = int(np.max(series))
-        gap =  max_ - min_
-
-        bins_ = [
-            min_
-            ,(min_+int(0.10*gap))
-            ,(min_+int(0.20*gap))
-            ,(min_+int(0.30*gap))
-            ,(min_+int(0.40*gap))
-            ,(min_+int(0.50*gap))
-            ,(min_+int(0.60*gap))
-            ,(min_+int(0.70*gap))
-            ,(min_+int(0.80*gap))
-            ,(min_+int(0.90*gap))
-            ,max_
-            ]
-
-        plt.hist( series, bins =  bins_)
-        plt.show() '''
-def to_str(Sample:list)->list:
+        mean_length =int( np.mean(len_array))
+        return mean_length
     
-    Sample = list(map(lambda x: str(x), Sample))
-    return Sample
+    def length(__log: dict,kwargs)-> dict:
+        ''' ->list
+            函数功能： 按照所包含list的长度筛选list内的list
+        '''
+        if type(_log)!= type(list([])):
+            return print('ERROR : input log not a list.')
+
+
+        down_ = int(kwargs['down'])
+        up_   = int(kwargs['up'])
+      
+        useful_list = []
+        len_list = []
+
+        for _series in _log:
+            len_  = int(len(_series))
+   
+            if ((len_>= down_) & (len_<= up_)):
+          
+                useful_list.append(_series)
+                len_list.append(len_)
+        
+        import numpy as np
+        print('Length filter finish , average length : ',int(np.mean(len_list)))
+        
+        return useful_list
+    
+    def to_str(_log:list,kwargs)->list:
+        Sample = _log
+        Sample = list(map(lambda x: str(x), Sample))
+        return Sample
+
+    def test(__log: list,kwargs)-> list:
+        '''->dict
+            函数功能： **kwargs测试
+        '''
+        print('in function test!')
+        print('kwargs',kwargs,'kwargs[head]',kwargs['head'])
+
+    return eval(mode)(_log,kwargs)
 
 @_t
 def count_words(Sample:list)-> list:
@@ -211,11 +195,21 @@ json_export_path = 'Piplines\\mid_export_enroll_dict.json'
 enroll_dict_list_inside = read_or_write_json(
     path    = json_export_path
     ,mode   = 'r')
-non_id_array = dict_to_array(enroll_dict_list_inside,drop_key= True)
+list_enroll_id_in_tail = dict_to_list(enroll_dict_list_inside,drop_key= False)
+
+
 
 # wash
-useful_list = cut_toolong_tooshort(non_id_array,up = 5000,down = 100)
-Sample = to_str(useful_list)
+
+
+useful_list = list_filter(mode = 'length',
+    _log= list_enroll_id_in_tail,
+    up = 1000,
+    down = 100)
+
+Sample = list_filter(mode = 'to_str',
+    _log= useful_list)
+
 Sample_Vector = count_words(Sample)
 
 # cluster
