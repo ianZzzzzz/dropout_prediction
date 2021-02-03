@@ -137,6 +137,125 @@ def list_to_dict(list_:list):
     
     return dict_
 
+
+def cluster(
+    list_actions: list,
+    list_label : list,
+    cluster_method = 'k_mean',
+    cluster_num = 4
+    )-> list:
+    """[聚类行为序列]
+
+    Args:
+        list_actions (list): [行为序列]
+
+    Returns:
+        list: [
+            index: enroll_id 
+            value:cluster_result 
+            ]
+    """    
+    # to vector
+    def show():
+        # compute number and avg length of each category    
+        cluster_3 = []
+        cluster_2 = []
+        cluster_1 = []
+        cluster_0 = []
+
+        Sample = useful_list
+        # group the log list by cluster result
+        for i in range(len(Sample)):
+            
+            if Sample_Label[i] ==0:
+                cluster_0.append(Sample[i])
+            if Sample_Label[i] ==1:
+                cluster_1.append(Sample[i])
+            if Sample_Label[i] ==2:
+                cluster_2.append(Sample[i])
+            if Sample_Label[i] ==3:
+                cluster_3.append(Sample[i])
+
+        final = [
+            len(cluster_0),len(cluster_1)
+            ,len(cluster_2),len(cluster_3)]
+
+        list_data_after_cluster = [
+            cluster_0,cluster_1
+            ,cluster_2,cluster_3]
+
+        # compute avg length of each cluster
+        i = 0
+        for c in list_data_after_cluster:
+            print(
+                'cluster ',i,' avg length : ',
+                list_filter(
+                    mode='find_avg_length_of_series',
+                    _log= c)
+                    )
+            i+=1
+
+    @_t
+    def count_words(Sample:list)-> list:
+        '''
+            函数功能：根据传入的参数选择相应的方式向量化文本 
+                1 word bag
+                2 n-gram
+                
+        '''
+        # 转换成字符串 因为sklrarn的库只接受str类型的样本
+        
+        from sklearn.feature_extraction.text import CountVectorizer
+        # 实例化
+        vectorizer = CountVectorizer()
+        # 遍历所有样本来建立词表
+        bag = vectorizer.fit(Sample)
+        # 向量化
+        vector = vectorizer.transform(Sample)
+
+        return vector.toarray().tolist()
+
+    def list_to_dict(list_:list):
+        """[convert dict to list use the 1st cloumn make index 2nd column make value]
+
+        Args:
+            list_ (list): [shape(n,2)]
+        
+        Return: dict_ :w dict
+
+        """  
+        dict_ = {}
+        for item_ in list_:
+            index_ = item_[0]
+            value_ = int(item_[1])
+            dict_[index_] = value_
+        
+        return dict_
+
+    Sample = list_filter(mode = 'to_str',
+        _log= list_actions)
+
+    Sample_Vector = count_words(Sample)
+
+    # cluster
+    Sample_Label = k_mean(Sample_Vector,4)
+    # cluster end
+
+    # map enroll id
+    list_include_Id_Label_Cluster = []
+    dict_label = list_to_dict(list_labels)
+
+    for i in range(len(list_actions)):
+        id_      = list_actions[i][-1]
+        id_label = dict_label[id_]
+        cluster_label = Sample_Label[i]
+
+        list_include_Id_Label_Cluster.append([id_,id_label,cluster_label])
+    # map end
+
+
+    return list_include_Id_Label_Cluster
+
 def list_filter(_log:list,mode:str,**kwargs)-> list:
     """按参数筛选字典中的数据
 
@@ -197,26 +316,6 @@ def list_filter(_log:list,mode:str,**kwargs)-> list:
 
     return eval(mode)(_log,kwargs)
 
-@_t
-def count_words(Sample:list)-> list:
-    '''
-        函数功能：根据传入的参数选择相应的方式向量化文本 
-            1 word bag
-            2 n-gram
-            
-    '''
-    # 转换成字符串 因为sklrarn的库只接受str类型的样本
-    
-    from sklearn.feature_extraction.text import CountVectorizer
-    # 实例化
-    vectorizer = CountVectorizer()
-    # 遍历所有样本来建立词表
-    bag = vectorizer.fit(Sample)
-    # 向量化
-    vector = vectorizer.transform(Sample)
-
-    return vector.toarray().tolist()
-
 def tf_idf_width(Sample:list):
     from sklearn.feature_extraction.text import TfidfVectorizer
     
@@ -254,107 +353,9 @@ useful_list = list_filter(mode = 'length',
     _log= list_enroll_id_in_tail,
     up = 1000,
     down = 100)
-cluster_result = clster(useful_list)
-
-def clster(
-    action_list: list,
-    list_label : list,
-    cluster_method = 'k_mean',
-    cluster_num = 4
-    )-> list:
-    """[聚类行为序列]
-
-    Args:
-        action_list (list): [行为序列]
-
-    Returns:
-        list: [
-            index: enroll_id 
-            value:cluster_result 
-            ]
-    """    
-    # to vector
-    
-    def list_to_dict(list_:list):
-        """[convert dict to list use the 1st cloumn make index 2nd column make value]
-
-        Args:
-            list_ (list): [shape(n,2)]
-        
-        Return: dict_ :w dict
-
-        """  
-        dict_ = {}
-        for item_ in list_:
-            index_ = item_[0]
-            value_ = int(item_[1])
-            dict_[index_] = value_
-        
-        return dict_
+cluster_result = cluster(
+    list_actions = useful_list[:5],
+    list_label   = list_labels)
 
 
-    Sample = list_filter(mode = 'to_str',
-        _log= action_list)
-
-    Sample_Vector = count_words(Sample)
-    
-    # cluster
-    Sample_Label = k_mean(Sample_Vector,4)
-    # cluster end
-
-    # map enroll id
-    list_include_Id_Label_Cluster = []
-    dict_label = list_to_dict(list_label)
-
-    for i in range(len(Sample)):
-        id_      = Sample[i][-1]
-        id_label = dict_label[id_]
-        cluster_label = Sample_Label[i]
-
-        list_include_Id_Label_Cluster.append(
-            [ id_ , id_label , cluster_label ]
-        )
-    
-    # map end
-    
-    cluster_3 = []
-    cluster_2 = []
-    cluster_1 = []
-    cluster_0 = []
-
-    Sample = useful_list
-    # group the log list by cluster result
-    for i in range(len(Sample)):
-        
-        if Sample_Label[i] ==0:
-            cluster_0.append(Sample[i])
-        if Sample_Label[i] ==1:
-            cluster_1.append(Sample[i])
-        if Sample_Label[i] ==2:
-            cluster_2.append(Sample[i])
-        if Sample_Label[i] ==3:
-            cluster_3.append(Sample[i])
-
-    final = [
-        len(cluster_0),len(cluster_1)
-        ,len(cluster_2),len(cluster_3)]
-
-    list_data_after_cluster = [
-        cluster_0,cluster_1
-        ,cluster_2,cluster_3]
-
-    # compute avg length of each cluster
-    i = 0
-    for c in list_data_after_cluster:
-        print(
-            'cluster ',i,' avg length : ',
-            list_filter(
-                mode='find_avg_length_of_series',
-                _log= c)
-                )
-        i+=1
-
-    # cluster result
-
-    
 
