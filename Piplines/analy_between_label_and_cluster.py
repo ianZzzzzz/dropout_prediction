@@ -16,7 +16,7 @@ def _t(function):
     '''
     @wraps(function)
     def function_timer(*args, **kwargs):
-        print ('[Function: {name} start...]'.format(name = function.__name__))
+        print ('[Function: {name} start]'.format(name = function.__name__))
         t0 = time.time()
         result = function(*args, **kwargs)
         t1 = time.time()
@@ -316,26 +316,51 @@ def list_filter(_log:list,mode:str,**kwargs)-> list:
 
     return eval(mode)(_log,kwargs)
 
-def tf_idf_width(Sample:list):
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    
-    # 实例化
-    vectorizer = TfidfVectorizer()
-    # 标记并建立索引
-    vectorizer.fit(Sample)
-    # 编码文档
-    vector = vectorizer.transform(Sample)
 
-def k_mean(Sample: list,num_clusters):
+def k_mean(Sample: ndarray,num_clusters)->list:
+ 
     from sklearn.cluster import KMeans
 
-   
-    km = KMeans(n_clusters=num_clusters)
+    kmeans=KMeans(n_clusters=num_clusters)
+    labels = kmeans.fit(Sample).labels_.tolist()
 
-    km.fit(Sample_Vector)
+    return labels
 
-    Sample_labels = km.labels_.tolist()
-    return Sample_labels
+
+def count_actions(
+    action_series: list
+    )->list:
+    """[计算序列中各action的频次]
+
+    Args:
+        action_series (list): [行为序列]]
+
+    Returns:
+        list: [频次向量]
+    """        
+    list_vect = []
+    list_enroll_id = []
+    for item in range(len(action_series)):
+
+        list_actions  = action_series[item]
+        enroll_id = list_actions[-1]
+        list_enroll_id.append(enroll_id)
+
+        dict_vect = { 
+            11:0,12:0,13:0,14:0,15:0,
+            21:0,22:0,23:0,24:0,25:0,26:0,
+            31:0,32:0,33:0,34:0,
+            41:0,42:0,43:0,44:0,45:0,46:0}
+
+        for item_ in range(len (list_actions)-1):
+            action_ = list_actions[item_]
+            dict_vect[action_]+=1
+        vect = list(dict_vect.values())
+        vect.append(enroll_id) # id
+
+        list_vect.append(vect)
+
+    return (list_vect,list_enroll_id)
 
 # load
 json_export_path = 'Piplines\\mid_export_enroll_dict.json'
@@ -345,17 +370,68 @@ dict_enroll_list_inside = read_or_write_json(
 list_enroll_id_in_tail = dict_to_list(dict_enroll_list_inside,drop_key= False)
 
 label_path = 'prediction_log\\test_truth.csv'
-list_labels = load_csv(label_path)
-
+nd_labels  = load_csv(label_path)
+ 
 # wash
 
 useful_list = list_filter(mode = 'length',
     _log= list_enroll_id_in_tail,
     up = 1000,
     down = 100)
+
+
 cluster_result = cluster(
     list_actions = useful_list[:5],
     list_label   = list_labels)
+
+
+action_series = useful_list[:]
+
+list_vect,list_id = count_actions(action_series)
+
+list_dropout_labels = []
+for id_ in list_id :
+    mask = nd_labels[:,0]==id_
+    dropout_label = nd_labels[mask][0,1]
+    list_dropout_labels.append(dropout_label)
+
+
+list_kmean_labels = k_mean(
+    Sample= np.array(list_vect)[:,:-1],
+    num_clusters= 2)
+
+
+d_0 = len([i for i in list_dropout_labels if i==0])
+
+correct_0 = 0
+correct_1 = 0
+for i in range(len(list_dropout_labels)):
+    if list_dropout_labels[i] == list_kmean_labels[i]:
+        if list_dropout_labels[i]==0:correct_0 +=1
+        else:correct_1 += 1
+
+
+print(
+    'correct_1 :',correct_1,
+    'correct_0 :',correct_0
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

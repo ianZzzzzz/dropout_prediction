@@ -1,6 +1,6 @@
 TEST_OR_NOT = False
 from numpy import ndarray
-def load(
+def load_csv(
     log_path: str,
     encoding_='utf-8',
     columns=None,
@@ -33,7 +33,7 @@ def load(
     return log.values
 
 path = 'prediction_log\\test_truth.csv'
-labels = load(path)
+labels = load_csv(path)
 
 
 
