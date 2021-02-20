@@ -411,6 +411,7 @@ for i in range(len(list_dropout_labels)):
         else:correct_1 += 1
 
 
+
 print(
     'correct_1 :',correct_1,
     'correct_0 :',correct_0
