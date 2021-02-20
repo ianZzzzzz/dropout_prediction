@@ -337,6 +337,19 @@ def count_actions(
 
     Returns:
         list: [频次向量]
+    
+    Describe:
+        经过预览数据后发现以下几种行为的样本极少，所以舍弃。（75%以上的序列均无以下样本）
+
+            # comment
+            ,'create_thread':31 # n
+            ,'create_comment':32 # n
+            ,'delete_thread':33 # n
+            ,'delete_comment':34 #n
+            # click
+            ,'click_forum':44 #n
+            ,'click_progress':45 #n
+
     """        
     list_vect = []
     list_enroll_id = []
@@ -349,18 +362,31 @@ def count_actions(
         dict_vect = { 
             11:0,12:0,13:0,14:0,15:0,
             21:0,22:0,23:0,24:0,25:0,26:0,
-            31:0,32:0,33:0,34:0,
-            41:0,42:0,43:0,44:0,45:0,46:0}
+            31:0,32:0,33:0,34:0, # useless
+            41:0,42:0,43:0,
+            44:0,45:0,           # useless
+            46:0}
 
         for item_ in range(len (list_actions)-1):
             action_ = list_actions[item_]
             dict_vect[action_]+=1
+        
+        # del useless actions
+        del dict_vect[31]
+        del dict_vect[32]
+        del dict_vect[33]
+        del dict_vect[34]
+        del dict_vect[44]
+        del dict_vect[45]
+
         vect = list(dict_vect.values())
-        vect.append(enroll_id) # id
+
+       # vect.append(enroll_id) # id
 
         list_vect.append(vect)
 
     return (list_vect,list_enroll_id)
+
 
 # load
 json_export_path = 'Piplines\\mid_export_enroll_dict.json'
@@ -388,41 +414,7 @@ cluster_result = cluster(
 action_series = useful_list[:]
 
 list_vect,list_id = count_actions(action_series)
-
-list_dropout_labels = []
-for id_ in list_id :
-    mask = nd_labels[:,0]==id_
-    dropout_label = nd_labels[mask][0,1]
-    list_dropout_labels.append(dropout_label)
-
-
-list_kmean_labels = k_mean(
-    Sample= np.array(list_vect)[:,:-1],
-    num_clusters= 2)
-
-
-d_0 = len([i for i in list_dropout_labels if i==0])
-
-correct_0 = 0
-correct_1 = 0
-for i in range(len(list_dropout_labels)):
-    if list_dropout_labels[i] == list_kmean_labels[i]:
-        if list_dropout_labels[i]==0:correct_0 +=1
-        else:correct_1 += 1
-
-
-
-print(
-    'correct_1 :',correct_1,
-    'correct_0 :',correct_0
-)
-
-
-
-
-
-
-
+list_vect_non_id_drop_useless , list_id = count_actions(action_series)
 
 
 
