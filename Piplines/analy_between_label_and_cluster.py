@@ -387,6 +387,143 @@ def count_actions(
 
     return (list_vect,list_enroll_id)
 
+def count_action_category(
+    action_series: list
+    )->list:
+    """[计算序列中各action的频次]
+
+    Args:
+        action_series (list): [行为序列]]
+
+    Returns:
+        list: [频次向量]
+    
+    
+    """        
+    list_vect = []
+    list_enroll_id = []
+    for item in range(len(action_series)):
+
+        list_actions  = action_series[item]
+        enroll_id = list_actions[-1]
+        list_enroll_id.append(enroll_id)
+
+        
+        
+        dict_vect = {
+            1:0, 2:0, 3:0, 4:0
+        }
+        for item_ in range(len (list_actions)-1):
+            action_ = list_actions[item_]
+            category = int(str(action_)[0])
+            dict_vect[category]+=1
+        
+        vect = list(dict_vect.values())
+
+       # vect.append(enroll_id) # id
+
+        list_vect.append(vect)
+
+    return list_vect#,list_enroll_id
+
+def find_user(
+    list_log_,
+    list_id_,
+    list_label_ )->list:
+    """
+    [根据辍学标签将行为序列进行分类]
+
+    Args:
+        
+        list_log_ ([list]): [行为序列]
+        list_id_ ([list]): [行为序列中每行对应的enroll id]
+        list_label_ ([list]): [辍学标签序列]
+
+    Returns:
+        
+        list: 
+            1 不辍学序列
+            2 对应的enroll id
+            3 辍学序列
+            4 对应的enroll id
+
+    """    
+    #hash
+    label_dict = {}
+    for label in list_label_:
+        id_ = label[0]
+        label_ = label[1]
+        label_dict[id_] = label_
+
+    action_dict = {# [datas] , [ids]
+        0:[ [],[]], 
+        1:[ [],[]]  }
+
+    for i in range(len(list_id_)) :
+
+        id_ = list_id_[i]
+        label_ = label_dict[id_]
+        data_list = list_log_[i]
+
+        action_dict[label_][0].append(data_list)
+        action_dict[label_][1].append(id_)
+    
+    return (
+        action_dict[0][0],
+        action_dict[0][1],
+        action_dict[1][0],
+        action_dict[1][1])
+
+def down_sampling(samples:list)-> list:
+    """[以行为分类降采样行为序列]
+
+
+    Args:
+        samples (list): [行为序列集合]
+
+    Returns:
+        list: [降采样的行为序列集合]
+    """    
+    new_list = []
+    for series in samples:
+        new_list_ = []
+        for i in range(len(series)-1):
+            action = series[i]
+            action_category = int(str(action)[0]) 
+            new_list_.append(action_category)
+        new_list.append(new_list_)
+
+    return new_list
+
+def count_scene(log_:list)->dict:
+    
+    log_ = useful_list
+    up_ = 15
+    down_ = 3
+
+    count_dict = {}
+    for length in range(down_,up_):
+        print('Counting length :',length)
+        
+        count_for_length_x = {}
+        
+        for series in log_:
+
+            for i in range(len(series) -length):
+                str_ = str(series[i])
+                for i_ in range(length-1):
+
+                    str_next = str(series[i+1+i_])
+                    str_ = str_ +str_next
+
+                try:
+                    count_for_length_x[str_]+=1
+                except:
+                    count_for_length_x[str_] = 1
+
+        count_dict[length] = count_for_length_x
+    return count_dict
+
 
 # load
 json_export_path = 'Piplines\\mid_export_enroll_dict.json'
@@ -396,7 +533,8 @@ dict_enroll_list_inside = read_or_write_json(
 list_enroll_id_in_tail = dict_to_list(dict_enroll_list_inside,drop_key= False)
 
 label_path = 'prediction_log\\test_truth.csv'
-nd_labels  = load_csv(label_path)
+np_label   = load_csv(label_path)
+list_labels= np_label.tolist()
  
 # wash
 
@@ -412,19 +550,28 @@ cluster_result = cluster(
 
 
 action_series = useful_list[:]
-
-list_vect,list_id = count_actions(action_series)
 list_vect_non_id_drop_useless , list_id = count_actions(action_series)
 
+list_nondrop_vect , list_nondrop_id , list_droped_vect , list_droped_id= find_user(
+     list_log_ = list_vect_non_id_drop_useless,
+     list_id_  = list_id,
+     list_label_= list_labels)
+
+# col4 辍学者更离散
+# col 5，6 辍学者更集中
+
+list_useful_list_downSample = down_sampling(useful_list)
+
+list_nondrop_series , list_nondrop_id , list_droped_series , list_droped_id= find_user(
+     list_log_ = list_useful_list_downSample,
+     list_id_  = list_id,
+     list_label_= list_labels)
 
 
+dict_count_scene = count_scene(useful_list)
 
+import json
+json.dump(dict_count_scene,open('dict_count_scene.json','w'))
 
-
-
-
-
-
-
-
-
+def dict_to_list():
+    pass
