@@ -497,7 +497,7 @@ def down_sampling(samples:list)-> list:
 
 def count_scene(log_:list)->dict:
     
-    log_ = useful_list
+   
     up_ = 15
     down_ = 3
 
@@ -575,3 +575,81 @@ json.dump(dict_count_scene,open('dict_count_scene.json','w'))
 
 def dict_to_list():
     pass
+
+length = 3
+dict_count_scene[length].values
+
+len_list = []
+
+for key,dict_ in dict_count_scene.items():
+    pass
+    print(key)
+    value_list = list(dict_.values())
+    len_list.append(value_list)
+
+max_length = []
+for len_ in len_list:
+   # max_ = np.max(len_)
+
+    print(
+        np.max(len_),
+        int(np.mean(len_)),
+        int(np.std(len_))
+    )
+
+dict_count_scene[10]
+for key,value in dict_count_scene[14].items():
+    pass
+    if value> 1000:
+        print(key)
+
+
+
+def part_count_scene(
+    log_:list,
+    scene_:str)->int:
+    length = len(scene_)
+    
+    
+    print('Counting length :',length)
+    print('Counting scene :',scene_)
+    
+    count_for_length_x = {}
+    count_by_samples = 0
+    count_by_items = 0
+  #  c = 0
+    
+    for series in log_:
+      #  c+=1
+        control = 0
+      #  if c%1000 ==0 :print('already enumerate :',c)
+        for i in range(len(series) -length):
+            str_ = str(series[i])
+            
+            for i_ in range(length-1):
+                str_next = str(series[i+1+i_])
+                str_ = str_ +str_next
+
+           # print(str_)
+            if str_ == scene_:
+                control = 1
+                count_by_items +=1
+            
+        if control ==1:
+            count_by_samples +=1
+
+    print(
+        'count_by_items :',count_by_items,'\n',
+        'count_by_samples :',count_by_samples
+        )    
+    return None
+
+
+scene_dorp = part_count_scene(
+    list_droped_series
+    ,scene_='12121212')
+
+scene_nondorp = part_count_scene(
+    list_nondrop_series
+    ,scene_='12121212')
+
