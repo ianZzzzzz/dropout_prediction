@@ -563,10 +563,21 @@ list_nondrop_vect , list_nondrop_id , list_droped_vect , list_droped_id= find_us
 list_useful_list_downSample = down_sampling(useful_list)
 
 list_nondrop_series , list_nondrop_id , list_droped_series , list_droped_id= find_user(
-     list_log_ = list_useful_list_downSample,
+     list_log_ = useful_list,
      list_id_  = list_id,
      list_label_= list_labels)
 
+dict_down_sample_data = {
+    'list_nondrop_series':list_nondrop_series,
+    'list_nondrop_id'    :list_nondrop_id,
+    'list_droped_series' :list_droped_series,
+    'list_droped_id'     :list_droped_id}
+
+dict_full_data = {
+    'list_nondrop_series':list_nondrop_series ,
+    'list_nondrop_id'    :list_nondrop_id ,
+    'list_droped_series' :list_droped_series ,
+    'list_droped_id'     :list_droped_id    }
 
 dict_count_scene = count_scene(useful_list)
 
@@ -598,58 +609,89 @@ for len_ in len_list:
     )
 
 dict_count_scene[10]
-for key,value in dict_count_scene[14].items():
+for key,value in dict_count_scene[5].items():
     pass
-    if value> 1000:
-        print(key)
+    if value> 10000:
+        print(key,value)
 
 
 
 def part_count_scene(
-    log_:list,
+    logs:dict,
     scene_:str)->int:
-    length = len(scene_)
+
+    length = int(len(scene_))# /2)
     
-    
-    print('Counting length :',length)
     print('Counting scene :',scene_)
     
-    count_for_length_x = {}
-    count_by_samples = 0
-    count_by_items = 0
-  #  c = 0
     
-    for series in log_:
-      #  c+=1
-        control = 0
-      #  if c%1000 ==0 :print('already enumerate :',c)
-        for i in range(len(series) -length):
-            str_ = str(series[i])
-            
-            for i_ in range(length-1):
-                str_next = str(series[i+1+i_])
-                str_ = str_ +str_next
+    result_dict = {}
+    for name_,log_ in logs.items():
+        count_by_samples = 0
+        count_by_items = 0
+        for series in log_:
+        
+            control = 0
+            #  if c%1000 ==0 :print('already enumerate :',c)
+            for i in range(len(series) -length):
+                str_ = str(series[i])
+                
+                for i_ in range(length-1):
+                    str_next = str(series[i+1+i_])
+                    str_ = str_ +str_next
 
-           # print(str_)
-            if str_ == scene_:
-                control = 1
-                count_by_items +=1
-            
-        if control ==1:
-            count_by_samples +=1
+            #  print(str_)
+                if str_ == scene_:
+                    control = 1
+                    count_by_items +=1
+                
+            if control ==1:
+                count_by_samples +=1
 
-    print(
-        'count_by_items :',count_by_items,'\n',
-        'count_by_samples :',count_by_samples
-        )    
+            result_dict[name_]=[
+                count_by_items,count_by_samples]
+
+        def analy_(
+        name_ : str
+        ,log_:list
+        ,count_by_items
+        ,count_by_samples)->None:
+        
+            sample_number = len(log_)
+            rate_sample_coverage = int(
+                (count_by_samples/sample_number)*100  )
+            avg_item_perSample = int(
+                count_by_items/(count_by_samples+1)  )
+            
+            print('In ',name_,': \n',
+                'Sample Coverage Rate:',rate_sample_coverage,'%',
+                '\nAverage Occurrences :',avg_item_perSample)
+    
+        
     return None
 
 
-scene_dorp = part_count_scene(
-    list_droped_series
-    ,scene_='12121212')
+datas = {
+    'drop':dict_down_sample_data['list_droped_series'],
+    'nondrop':dict_down_sample_data['list_nondrop_series']}
 
-scene_nondorp = part_count_scene(
-    list_nondrop_series
-    ,scene_='12121212')
+analy = part_count_scene(
+    logs = datas
+    ,scene_='424642151213'
+    )
 
+scenes = [
+     '44444444444444',
+     '111111',
+     '2222',
+     '333333'
+   ]
+
+for i in scenes: 
+    analy = part_count_scene(
+        logs = datas
+        ,scene_=i
+        ) 
+
+def Analy():
+    pass
