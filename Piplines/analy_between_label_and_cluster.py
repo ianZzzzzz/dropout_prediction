@@ -648,26 +648,42 @@ def part_count_scene(
             if control ==1:
                 count_by_samples +=1
 
-            result_dict[name_]=[
-                count_by_items,count_by_samples]
-
-        def analy_(
-        name_ : str
-        ,log_:list
-        ,count_by_items
-        ,count_by_samples)->None:
-        
-            sample_number = len(log_)
-            rate_sample_coverage = int(
-                (count_by_samples/sample_number)*100  )
-            avg_item_perSample = int(
-                count_by_items/(count_by_samples+1)  )
-            
-            print('In ',name_,': \n',
-                'Sample Coverage Rate:',rate_sample_coverage,'%',
-                '\nAverage Occurrences :',avg_item_perSample)
+        result_dict[name_]=[
+            len(log_),
+            int(count_by_items),
+            int(count_by_samples)]
     
-        
+    def analy_()->None:  
+
+        def compute(name_:str)->list:
+            """
+            return [ 
+                rate_sample_coverage ,
+                avg_item_perSample ]
+
+            """            
+            sample_number    = result_dict[name_][0]
+            count_by_items   = result_dict[name_][1]
+            count_by_samples = result_dict[name_][2]
+            
+            rate_sample_coverage = count_by_samples/sample_number
+            avg_item_perSample =  count_by_items/(count_by_samples+1)          
+            return [ 
+                rate_sample_coverage ,
+                avg_item_perSample ]
+
+        drop_result = compute('drop')
+        nondrop_result = compute('nondrop')
+        gap_coverage = int(abs( drop_result[0]-nondrop_result[0])*100)
+        gap_avg = int(abs(drop_result[1]-nondrop_result[1] ))
+
+        if (gap_coverage>= 5) or (gap_avg >=5):
+
+            print(
+                'gap_coverage :',gap_coverage,'%',
+                '\ngap_avg :',gap_avg)
+
+    analy_()
     return None
 
 
@@ -681,7 +697,7 @@ analy = part_count_scene(
     )
 
 scenes = [
-     '44444444444444',
+     '4444444',
      '111111',
      '2222',
      '333333'
