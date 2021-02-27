@@ -181,25 +181,106 @@ def to_dict_2(
     log: ndarray
     ,test=TEST_OR_NOT
     )-> Dict[str,ndarray]: 
-    '''优化版 时间复杂度低'''
+
+    """[groupby enrollment number ]
+
+    Returns:
+        [type:dict]: 
+        { enroll_id:   
+            data = [
+                action_time,
+                action,        # int
+                action_object, # int
+                session        # int]}
+    """   
     print('find ',len(log),' row logs')
     i = 0
     log_dict = {}
+
+    # replace 
+    action_replace_dict = {
+        # video
+        'seek_video': 11
+        ,'play_video':12
+        ,'pause_video':13
+        ,'stop_video':14
+        ,'load_video':15
+        # problem
+        ,'problem_get':21
+        ,'problem_check':22
+        ,'problem_save':23
+        ,'reset_problem':24
+        ,'problem_check_correct':25
+        , 'problem_check_incorrect':26
+        # comment
+        ,'create_thread':31
+        ,'create_comment':32
+        ,'delete_thread':33
+        ,'delete_comment':34
+        # click
+        ,'click_info':41
+        ,'click_courseware':42
+        ,'click_about':43
+        ,'click_forum':44
+        ,'click_progress':45
+        ,'close_courseware':46}
+    object_replace_dict = {}
+    session_replace_dict = {}
+
+    object_count = 0
+    session_count = 0
+
     for row in log:
-        area = row[0]
-        data = row[[1,2,3]]
-        #print('area: ',area,' data: ',data)
+        enroll_id = row[0]
+        user_id = row[1]
+        course_id = row[2]
+
+        session = row[3]
+        action = row[4]
+        action_object = row[5]
+        action_time = row[6]
         
+
+        try:
+            action = action_replace_dict[action]
+        except:
+            action = int(0)
+        
+      
+        try:
+            action_object = object_replace_dict[action_object]
+        except:
+            object_count +=1
+            action_replace_dict[action_object] = object_count
+            action_object = object_replace_dict[action_object]
+        
+        try:
+            session = session_replace_dict[session]
+        except:
+            session_count +=1
+            session_replace_dict[session] = session_count
+            session = session_replace_dict[session]
+
+        data = [
+            action_time,
+            action,
+            action_object,
+            session ]
         # if log_dict[]里没数据：初始化=[]
         try:
-            log_dict[area].append(data)
+            log_dict[enroll_id].append(data)
         except:
-            log_dict[area] = []
-            log_dict[area].append(data)
-            #print(log_dict[area])
+            log_dict[enroll_id] = []
+            log_dict[enroll_id].append(data)
+            #print(log_dict[enroll_id])
         i+=1
         if (i%print_batch)==0:print('already dict : ',i,'row logs')
         if (test == True) and (i ==print_batch):return log_dict
+    
+    import json
+    json.dump(action_replace_dict,open('action_replace_dict.json','w'))
+    json.dump(object_replace_dict,open('object_replace_dict.json','w'))
+
     return log_dict
 
 @_t
@@ -457,7 +538,7 @@ def dict_to_array(dict_log:dict)->list:
         
         i+=1
         if (i%print_key)==0:
-            print('already to array ',i,' areas.')
+            print('already to array ',i,' enroll_ids.')
 
     return dataset
 
@@ -493,7 +574,7 @@ def find_avg_length_of_series(log_list: list)->list:
     return mean_
 
 
-log_path = 'D:\\zyh\\data\\prediction_data\\prediction_log\\test_log.csv'
+log_path = 'D:\\zyh\\data\\prediction_data\\prediction_log\\train_log.csv'
 log_col = ['enroll_id','username','course_id','session_id','action','object','time']
 c_info_path = 'course_info.csv'
 c_info_col = ['id','course_id','start','end','course_type','category']
@@ -505,7 +586,7 @@ log_np = load(
     return_mode = 'values',
     encoding_ = 'utf-8',
     columns =log_col)
-log_dict = to_dict_2( log_np[1:,[0,4,6,2]]) # e_id action time c_id
+log_dict = to_dict_2( log_np[1:,:]) # e_id action time c_id
 C_INFO_NP = load(
     log_path =c_info_path,
     read_mode ='pandas',
@@ -514,7 +595,7 @@ C_INFO_NP = load(
     columns =c_info_col
     )
 
-log_np_convert = convert(log_dict,drop_zero = True)
+log_np_convert = convert(log_dict,drop_zero = True) # drop time gap
 
 log_list = dict_to_array(log_np_convert)
 
