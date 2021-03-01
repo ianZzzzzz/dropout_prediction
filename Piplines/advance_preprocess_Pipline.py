@@ -7,8 +7,8 @@ from numpy import ndarray
 from numpy import datetime64
 from pandas import DataFrame
 import numpy as np
-
-TEST_OR_NOT = True
+import json
+TEST_OR_NOT = False
 print_batch = int(1000000)
 chunk_size = int(10000) # enable only when TEST_OR_NOT = True
 
@@ -70,7 +70,7 @@ def to_dict_2(
     ,test=TEST_OR_NOT
     )-> Dict[str,ndarray]: 
 
-    """[groupby enrollment number ]
+    """[groupby enrollment number and encoding the feature]
 
     Returns:
         [type:dict]: 
@@ -207,32 +207,54 @@ def to_dict_2(
    
     def export_json_file():
         import json
-        json.dump(action_replace_dict,open('action_replace_dict.json','w'))
-        json.dump(object_replace_dict,open('object_replace_dict.json','w'))
+        json.dump(action_replace_dict,open('json_file\\test_dataset\\action_replace_dict.json','w'))
+        json.dump(object_replace_dict,open('json_file\\test_dataset\\object_replace_dict.json','w'))
 
-        json.dump(user_find_course,open('user_find_course.json','w'))
-        json.dump(course_find_user,open('course_find_user.json','w'))
+        json.dump(user_find_course,open('json_file\\test_dataset\\user_find_course.json','w'))
+        json.dump(course_find_user,open('json_file\\test_dataset\\course_find_user.json','w'))
 
-        json.dump(enroll_find_user,open('enroll_find_user.json','w'))
-        json.dump(enroll_find_course,open('enroll_find_course.json','w'))
+        json.dump(enroll_find_user,open('json_file\\test_dataset\\enroll_find_user.json','w'))
+        json.dump(enroll_find_course,open('json_file\\test_dataset\\enroll_find_course.json','w'))
         
-        json.dump(course_find_enroll,open('course_find_enroll.json','w'))
-        json.dump(user_find_enroll,open('user_find_enroll.json','w'))
+        json.dump(course_find_enroll,open('json_file\\test_dataset\\course_find_enroll.json','w'))
+        json.dump(user_find_enroll,open('json_file\\test_dataset\\user_find_enroll.json','w'))
     
     export_json_file()
 
     if (test == True) and (i ==print_batch):
         return log_dict
     else:
-        json.dump(log_dict,open('log_dict.json','w'))
+        json.dump(
+            log_dict,
+            open(
+                'D:\\zyh\\data\\prediction_data\\advance_preprocess_json\\dict_test_log.json'
+                ,'w'))
         return log_dict
     
 
 def convert(
     log: dict 
     ,drop_zero: bool
-    ,testing=TEST_OR_NOT
+   
     )->dict: 
+    """[summary]
+
+    Args:
+        log (dict): [description]
+        drop_zero (bool): [description]
+
+    Returns:
+        [type:dict]:
+            {
+                enroll_id:
+                    data = [
+                         action_time
+                         , action
+                         , action_object
+                         , session 
+                         ]
+            }
+    """    
     print('dict total len :',len(log))
     print(' convert running!')
     import json
@@ -243,7 +265,7 @@ def convert(
 
         ''' 根据course_id 查询课程的总耗时秒数 以及开始时间并返回
             函数调用了全局变量C_INFO_NP必须在课程信息被加载后才能运行'''
-        c_id = dict_enrollID_find_courseID[e_id]
+        c_id = dict_enrollID_find_courseID[str(e_id)]
         mask = C_INFO_NP[:,1] == c_id
 
         start = C_INFO_NP[mask][:,2]
@@ -331,7 +353,7 @@ def convert(
         # object_col = _log[:,2]
         # session_col = _log[:,3]
 
-        time_info   = find_start_end(e_id)
+        time_info   = find_start_end(str(e_id))
         time_head   = time_info['head']
         time_length = time_info['length']
 
@@ -365,13 +387,13 @@ def convert(
             的目的，将时间转换部分分为两部分写，后期如需重建此特征以上的代码可以不动'''
 
         action_series = rebulid # time_map(rebulid)
-        new_dict[e_id] =  action_series 
+        new_dict[e_id] =  action_series
         
         
     return new_dict
 
 
-log_path = 'prediction_log\\train_log.csv'
+log_path = 'D:\\zyh\\data\\prediction_data\\prediction_log\\test_log.csv'
 #log_path = 'D:\\zyh\\data\\prediction_data\\prediction_log\\train_log.csv'
 log_col = ['enroll_id','username','course_id','session_id','action','object','time']
 c_info_path = 'course_info.csv'
@@ -392,9 +414,22 @@ log_np = load(
     columns =log_col)
 
 log_dict = to_dict_2( log_np[1:,:]) # e_id action time c_id
-log_dict = None
-advanced_log_dict = 'D:\\zyh\\data\\prediction_data\\advance_preprocess_json\\log_dict.json'
-log_dict = json.load(advanced_log_dict,'r')
 
-log_np_convert = convert(log_dict,drop_zero = True) # drop time gap
+dict_log_test = json.load(
+    open(
+        'D:\\zyh\\data\\prediction_data\\advance_preprocess_json\\dict_test_log.json'
+        ,'r')
+        )
+path_eID_find_cID = 'json_file\\test_dataset\\enroll_find_course.json'
+dict_log_test_sec_version = convert(dict_log_test,drop_zero = True) # drop time gap
+
+dict_log_test_sec_version = t 
+for k,v in dict_log_test_sec_version.items():
+    t[int(k)] = v.tolist()
+
+json.dump(
+    dict_log_test_sec_version
+    ,open(
+        'D:\\zyh\\data\\prediction_data\\advance_preprocess_json\\dict_log_test_sec_version.json'
+        ,'w'))
 
