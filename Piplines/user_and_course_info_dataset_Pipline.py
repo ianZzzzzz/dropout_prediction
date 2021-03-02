@@ -174,7 +174,7 @@ def make_info_dataset(return_mode: str
     dict_enroll_info = {}
     list_enroll_info = []
     for e_id in enroll_find_course.keys():
-    
+        
         c_id = enroll_find_course[e_id]
         u_id = str(enroll_find_user[e_id])
         
@@ -216,6 +216,8 @@ def make_info_dataset(return_mode: str
                 list_enroll_info.append(info_)
         
     if return_mode == 'dict':
+        import json
+        json.dump(dict_enroll_info,open('json_file\\dict_enroll_info_full.json','w'))
         return    dict_enroll_info
     else: 
         if  return_mode == 'list':
@@ -248,20 +250,29 @@ dict_c_info = json.load(
     open('dict_course_info.json','r'))
 dict_u_info = json.load(
     open('dict_u_info.json','r'))
-enroll_find_course = json.load(
-    open('enroll_find_course.json','r'))
-enroll_find_user = json.load(
-    open('enroll_find_user.json','r'))
-dict_enroll_info = make_info_dataset(
+enroll_find_course_test = json.load(
+    open('json_file\\test_dataset\\enroll_find_course.json','r'))
+enroll_find_user_test = json.load(
+    open('json_file\\test_dataset\\enroll_find_user.json','r'))
+enroll_find_course_train = json.load(
+    open('json_file\\train_dataset\\enroll_find_course.json','r'))
+enroll_find_user_train = json.load(
+    open('json_file\\train_dataset\\enroll_find_user.json','r'))
+
+dict_enroll_info_full = make_info_dataset(
     return_mode= 'dict'
     ,dict_c_info=dict_c_info
     ,dict_u_info= dict_u_info
-    ,enroll_find_course= enroll_find_course
-    ,enroll_find_user= enroll_find_user
+    ,enroll_find_course= {
+        **enroll_find_course_test,
+        **enroll_find_course_train}
+    ,enroll_find_user= {
+        **enroll_find_user_test,
+        **enroll_find_user_train
+    }
     )
-#json.dump(dict_enroll_info,open('dict_enroll_info.json','w'))
 #================ info dataset finish ==================#
-
+dict_enroll_info_full = json.load(open('json_file\\dict_enroll_info_full.json','r'))
 #================ assemble train and test dataset ===============#
 dict_enroll_info = json.load(open('dict_enroll_info.json','r'))
 dict_log_train = json.load(
@@ -271,21 +282,103 @@ dict_log_train = json.load(
         ) 
 dict_log_test = json.load(
     open(
-        'D:\\zyh\\data\\prediction_data\\advance_preprocess_json\\dict_test_log.json'
+        'D:\\zyh\\data\\prediction_data\\advance_preprocess_json\\dict_log_test_sec_version.json'
         ,'r')
         ) 
 
+dict_log = dict_log_test
 def caculate_time_interval(dict_log)-> dict:
     pass
-dict_log = dict_log_test
-time_interval_dict = {}
-for e_id,list_log in dict_log.items():
 
-    for row in range(len(list_log)-1):
-        pass
-        row_next = list_log[row+1]
-        row_now  = list_log[row]
+    def static_(interval_list):
+            try:
+                R = interval_list
+                R_mean = np.mean(R) # 计算均值
+                R_var = np.var(R)   # 计算方差
+                R_sc = np.mean((R - R_mean) ** 3)  #计算偏斜度
+                R_ku = np.mean((R - R_mean) ** 4) / pow(R_var, 2) #计算峰度
+
+                static_list = [
+                    int(R_mean)
+                    ,int(R_var)
+                    ,round(R_sc,2)
+                    ,round(R_ku,2)]
+
+            except:
+                static_list = [
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan
+                ]
+                
+            
+            return static_list
+
+    time_interval_dict = {}
+    static_interval_dict = {}
+    enroll_scene_dict = {}
+    i = 0
+    for e_id,list_log in dict_log.items():
+        # 1 time interval
+        long_interval_list = []
+        short_interval_list = []
+        # 2 state transition
+        scene_dict = {}
+        for row in range(len(list_log)-1):
+            
+            row_next = list_log[row+1]
+            row_now  = list_log[row]
+
+            now_time = row_now[0]
+            now_action = row_now[1]
+
+            now_object = row_now[2]
+            now_session = row_now[3]
+            next_time = row_next[0]
+            next_action = row_next[1]
+            next_object = row_next[2]
+            next_session = row_next[3]
+
+            time_interval = int(next_time - now_time)
+            if time_interval >int(60*30): # half hour 
+                long_interval_list.append(time_interval)
+            else:
+                short_interval_list.append(time_interval)
+
         
+        short_static = static_(short_interval_list)
+        long_static  = static_(long_interval_list)
+        i+=1
+        
+        if (i%1000)==0:print(i)
+
+        # time_interval_dict[int(e_id)] = interval_list
+        long_static.extend(short_static)
+        static_interval_dict[int(e_id)] = long_static
+        #enroll_scene_dict[int(e_id)] = scene_dict
+        # break
+    return static_interval_dict
+
+dict_static_intervel_test = caculate_time_interval(dict_log_test)
+i = 0
+for k,v in dict_enroll_info.items():
+    i+=1
+    print(k,v)
+    if i==100:break
+
+list_test_static_info_dataset = []
+list_test_label = []
+for e_id,static_ in dict_static_intervel_test.items():
+    info_ = dict_enroll_info[int(e_id)]
+    info_.extend(static_)
+    assenbled_data = info_
+
+    list_test_static_info_dataset.append(assenbled_data)
+    list_test_label.append(dict_test_label[int(e_id)])
+
+
+
 
 def label_list_to_dict(list_:list)-> dict:
     """[convert list to dict  use the 1st cloumn make index 2nd column make value]
