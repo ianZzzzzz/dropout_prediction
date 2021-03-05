@@ -334,19 +334,22 @@ def caculate_time_interval(dict_log)-> dict:
         long_interval_list  = []
         short_interval_list = []
         # 2 state transition
-        scene_dict = {}
+        scene_dict = {
+            '424642151213':0,
+            '444444':0,
+            '121113':0}
         for row in range(len(list_log)-1):
             
             row_next = list_log[row+1]
             row_now  = list_log[row]
 
             now_time = row_now[0]
-            now_action = row_now[1]
+            
 
             now_object = row_now[2]
             now_session = row_now[3]
             next_time = row_next[0]
-            next_action = row_next[1]
+            
             next_object = row_next[2]
             next_session = row_next[3]
             try:
@@ -357,19 +360,46 @@ def caculate_time_interval(dict_log)-> dict:
                     short_interval_list.append(time_interval)
             except:
                 print(next_time,now_time)
+            # scenes
+            # 424642151213
+            # 444444
+            # 121113
+            if row < (len(list_log)-5):
+                now_action = row_now[1]
+                frist_action = [42,44,12]
+                if now_action in frist_action:
+                    scene = str(
+                        now_action)+str(list_log[row+1][1])+str(list_log[row+2][1])
+                    
+                    if scene == '444444':
+                        scene_dict[scene] +=1
+                    else :
+                        if scene == '121113':
+                            scene_dict[scene] +=1
+                        else:
+                            a0 = str( now_action)
+                            a1=str(list_log[row+1][1])
+                            a2=str(list_log[row+2][1])
+                            a3=str(list_log[row+3][1])
+                            a4=str(list_log[row+4][1])
+                            a5=str(list_log[row+5][1])
+                            scene = a0+a1+a2+a3+a4+a5
+                            if scene == '424642151213':
+                                scene_dict[scene] +=1
         
         short_static = static_(short_interval_list)
         long_static  = static_(long_interval_list)
+        # 3 head/tail gap
+             
         i+=1
-        
         if (i%1000)==0:print(i)
 
         # time_interval_dict[int(e_id)] = interval_list
         long_static.extend(short_static)
         static_interval_dict[int(e_id)] = long_static
-        #enroll_scene_dict[int(e_id)] = scene_dict
+        enroll_scene_dict[int(e_id)] = scene_dict
         # break
-    return static_interval_dict
+    return static_interval_dict,enroll_scene_dict
 def label_list_to_dict(list_:list)-> dict:
     """[convert list to dict  use the 1st cloumn make index 2nd column make value]
 
@@ -400,21 +430,34 @@ dict_log_test = json.load(
         'D:\\zyh\\data\\prediction_data\\advance_preprocess_json\\dict_log_test_sec_version.json'
         ,'r')
         ) 
-dict_static_intervel_test = caculate_time_interval(dict_log_test)
-  
-i = 0
+dict_static_intervel_test,dict_scene_count = caculate_time_interval(dict_log_test)
+
+
+k = 0
 list_test_static_info_dataset = []
 # c_inf0,u_info,long_static,short_static
 list_test_label = []
 for e_id,static_ in dict_static_intervel_test.items():
     info_ = dict_enroll_info_full[str(e_id)]
-    info_.extend(static_)
-    assenbled_data = info_
+    scene_count = list(dict_scene_count[e_id].values())
+    
+    data = []
+    
+    for i in info_:
+        data.append(i)
+    for i in static_:
+        data.append(i)
+    for i in scene_count:
+        data.append(i)
+
+    #break
+    assenbled_data = data
 
     list_test_static_info_dataset.append(assenbled_data)
     list_test_label.append(dict_test_label[int(e_id)])
-    i+=1
-    if (i%1000)==0:print(i)
+    #break
+    k+=1
+    if (k%1000)==0:print(k)
 
 json.dump(
     list_test_label,
