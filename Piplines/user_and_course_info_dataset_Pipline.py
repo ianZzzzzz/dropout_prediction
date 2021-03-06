@@ -5,6 +5,7 @@ from numpy import ndarray
 from numpy import datetime64
 from pandas import DataFrame
 import numpy as np
+from scipy import stats
 import json
 TEST_OR_NOT = False
 print_batch = int(1000000)
@@ -295,24 +296,23 @@ dict_enroll_info_full = json.load(open('json_file\\dict_enroll_info_full.json','
 
 def caculate_time_interval(dict_log)-> dict:
 
-
     def static_(interval_list):
             
             if len(interval_list) > int(3):
                 R = interval_list
                 R_mean = np.mean(R) # 计算均值
                 R_var = np.var(R)   # 计算方差
-                R_sc = np.mean((R - R_mean) ** 3)  #计算偏斜度
-                R_ku = np.mean((R - R_mean) ** 4) / pow(R_var, 2) #计算峰度
+                R_skew = stats.skew(R)  #计算偏斜度 有偏
+                R_kurtosis = stats.kurtosis(R) #计算峰度 有偏
 
-                R_sc = np.abs(R_sc)
-                R_ku = np.abs(R_ku)
+                R_skew = np.abs(R_skew)
+                R_kurtosis = np.abs(R_kurtosis)
 
                 static_list = [
                     round(R_mean,2)
                     ,round(R_var,2)
-                    ,round(R_sc,2)
-                    ,round(R_ku,2)]
+                    ,round(R_skew,2)
+                    ,round(R_kurtosis,2)]
 
             else:
                 static_list = [
@@ -335,9 +335,8 @@ def caculate_time_interval(dict_log)-> dict:
         short_interval_list = []
         # 2 state transition
         scene_dict = {
-            '424642151213':0,
-            '444444':0,
-            '121113':0}
+            #'424642151213':0,'444444':0,'121113':0
+            }
         for row in range(len(list_log)-1):
             
             row_next = list_log[row+1]
@@ -354,7 +353,7 @@ def caculate_time_interval(dict_log)-> dict:
             next_session = row_next[3]
             try:
                 time_interval = int(next_time - now_time)
-                if time_interval >int(60*30): # half hour 
+                if time_interval >int(60*15): # half hour 
                     long_interval_list.append(time_interval)
                 else:
                     short_interval_list.append(time_interval)
@@ -364,7 +363,8 @@ def caculate_time_interval(dict_log)-> dict:
             # 424642151213
             # 444444
             # 121113
-            if row < (len(list_log)-5):
+            if row < (len(list_log)-2):
+                
                 now_action = row_now[1]
                 frist_action = [42,44,12]
                 if now_action in frist_action:
