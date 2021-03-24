@@ -563,7 +563,7 @@ def Major_data_process(name:str,raw_folder_path:str):
             dict_log ([type]): [description]
         """        
         def assemble_info_data(name:str)-> dict:
-            """[concat user info and course info index by enroll id]
+            """[concat user info and course info ,index by enroll id]
 
             Args:
                 name (str): ['train' or 'test']
@@ -832,7 +832,7 @@ def Major_data_process(name:str,raw_folder_path:str):
                 encoding_ = 'utf-8',
                 columns =c_info_col
                 )
-             
+            
             dict_c_info = course_info_list_to_dict(C_INFO_NP[1:,:])
             dict_u_info = user_info_list_to_dict(U_INFO_NP[1:,:])
 
@@ -1021,6 +1021,299 @@ def Major_data_process(name:str,raw_folder_path:str):
                 if return_mode == 'ndarray' :return log.values
                 if return_mode == 'list'    :return log.values.tolist()
                     
+            def assemble_info_data(name:str)-> dict:
+                """[concat user info and course info ,index by enroll id]
+
+                Args:
+                    name (str): ['train' or 'test']
+                Returns:
+                        dict: [
+                            e_id: 
+                            [gender
+                            ,birth_year
+                            ,edu_degree
+                            ,course_category
+                            ,course_type
+                            ,course_duration]
+                            ]
+                """    
+
+                def load(
+                    log_path: str,
+                    read_mode: str,
+                    return_mode: str,
+                    encoding_='utf-8',
+                    columns=None,
+                    test=TEST_OR_NOT)-> ndarray or DataFrame:
+                    '''读取csv文件 返回numpy数组'''
+                    #if read_mode == 'cudf':import cudf as pd
+                    if read_mode == 'pandas' :
+                        import pandas as pd
+                        if test ==True: # only read 10000rows 
+                            reader = pd.read_csv(
+                                log_path
+                                ,encoding=encoding_
+                                ,names=columns
+                                ,chunksize=chunk_size)
+                                
+                            for chunk in reader:
+                                # use chunk_size to choose the size of test rows instead of loop
+                                log = chunk
+                                return log.values
+
+                        else: # read full file
+                            print('          Start loading ',log_path)
+                            log = pd.read_csv(
+                                log_path
+                                ,encoding=encoding_
+                                ,names=columns
+                                ,low_memory=False)
+
+                            
+                            print('            Total length :',len(log),'rows')
+                    if return_mode == 'df':return log
+                    if return_mode == 'values':return log.values
+
+                def user_info_list_to_dict(list_:list)-> dict:
+                    """[convert list to dict  use the 1st cloumn make index 2nd column make value]
+
+                    Args:
+                        list_ (list): [shape(n,2)]
+                    
+                    Return:dict_[u_id] = [gender,edu,birth]
+
+                    """  
+                    dict_ = {}
+                    gender_replace_dict ={
+                        'nan':0
+                        , 'male' :1
+                        , 'female' :2}    
+                    education_degree_replace_dict = {
+                        'nan': 0
+                        , 'Primary' :1
+                        , 'Middle' :2
+                        , "Bachelor's" :3
+                        , "Master's" :4
+                        , 'Associate' :5
+                        , 'High' :6
+                        , 'Doctorate' :7 
+                        , 'education' :8
+                        }
+
+                    for item_ in list_:
+                        u_id = int(item_[0])
+                        gender = item_[1]
+                        edu    = item_[2]
+                        birth  = item_[3]
+
+                        try:
+                            gender = gender_replace_dict[gender]
+                        except:
+                            gender = int(0)
+                        
+                        try:
+                            edu = education_degree_replace_dict[edu]
+                        except:
+                            edu = int(0)
+                        try:
+                            birth = int(birth)
+                        except:
+                            birth = int(0)
+                        
+                        dict_[u_id] = [gender,edu,birth]
+                        
+                    
+                    return dict_
+
+                def course_info_list_to_dict(list_:list)-> dict:
+                    """[convert list to dict  use the 1st cloumn make index 2nd column make value]
+
+                    Args:
+                        list_ (list): [shape(n,2)]
+                    
+                    Return: dict_[c_id] = [
+                            course_category
+                            ,course_type
+                            ,start_time
+                            ,end_time]
+                        
+
+                    """  
+                    dict_ = {}
+                    cate_replace_dict = {
+                        'nan':0
+                        , 'social science':1
+                        , 'business':2
+                        , 'electrical':3
+                        , 'chemistry':4
+                        , 'math':5
+                        , 'environment':6
+                        , 'biology':7
+                        , 'history':8
+                        , 'education':9
+                        , 'medicine':10
+                        , 'economics':11
+                        , 'art':12
+                        , 'physics':13
+                        , 'foreign language':14
+                        , 'literature':15
+                        , 'philosophy':16
+                        , 'engineering':17
+                        , 'computer':18
+                        }
+                    
+                    for item_ in list_:
+                        c_id = item_[1] # str
+                        start_time = item_[2]
+                        end_time    = item_[3]
+                        course_type  = int(item_[4])
+                        course_category = item_[5]
+
+                        try:
+                            course_category = cate_replace_dict[course_category]
+                        except:
+                            course_category = int(0)
+                        
+                        '''if start_time is np.:
+                            start_time = nan                    else:
+                            start_time = np.datetime64(start_time)
+                        if end_time is np.:
+                            end_time = nan                    else:
+                            end_time = np.datetime64(end_time)
+                        '''
+                    
+                        dict_[c_id] = [
+                            course_category
+                            ,course_type
+                            ,start_time
+                            ,end_time]
+                        
+                    
+                    return dict_
+
+                def make_info_dataset(return_mode: str
+                    ,enroll_find_course
+                    ,enroll_find_user
+                    ,dict_c_info
+                    ,dict_u_info)->dict or list:
+                    """[summary]
+
+                    Args:
+                        return_mode (str): [description]
+                        enroll_find_course ([type]): [description]
+                        enroll_find_user ([type]): [description]
+                        dict_c_info ([type]): [description]
+                        dict_u_info ([type]): [description]
+
+                    Returns:
+                        dict or list: [info_ = [
+                            gender
+                            ,birth_year
+                            ,edu_degree
+                            ,course_category
+                            ,course_type
+                            ,course_duration
+                        ]]
+                    """    
+
+                    dict_enroll_info = {}
+                    list_enroll_info = []
+                    for e_id in enroll_find_course.keys():
+                        
+                        c_id = enroll_find_course[e_id]
+                        u_id = int(enroll_find_user[e_id])
+                        
+                        # user info
+                        gender     = dict_u_info[u_id][0]
+                        edu_degree  = dict_u_info[u_id][1]
+                        birth_year = dict_u_info[u_id][2]
+
+                        # course info
+                        course_category   = dict_c_info[c_id][0]
+                        course_type = dict_c_info[c_id][1]
+
+                        course_start = dict_c_info[c_id][2]
+                        course_end = dict_c_info[c_id][3]
+
+                        
+
+                        if (course_start is np.nan) or (course_end is np.nan):
+                            course_duration = 0
+                        else:
+                            start_ = np.datetime64(course_start)
+                            end_   = np.datetime64(course_end)
+
+                            course_duration =  int(
+                                            ( end_ - start_ ).item().total_seconds() )
+                                        
+                        info_ = [
+                            gender
+                            ,birth_year
+                            ,edu_degree
+                            ,course_category
+                            ,course_type
+                            ,course_duration
+                        ]
+
+                        if return_mode == 'dict':
+                            dict_enroll_info[int(e_id)] = info_
+                        else: 
+                            if  return_mode == 'list':
+                                list_enroll_info.append(info_)
+                    print('        Success concat and filter out ',name,' infomation in course_info and user_info . ')
+                            
+                    if return_mode == 'dict':
+                        return dict_enroll_info
+                    else: 
+                        if  return_mode == 'list':
+                            return    list_enroll_info
+
+                print('      assemble_info_data running : ')
+                c_info_path = 'raw_data_file\\course_info.csv'
+                u_info_path = 'raw_data_file\\user_info.csv'
+                u_info_col = ['user_id','gender','education_degree','birth_year']
+                c_info_col = ['id','course_id','start_time','end_time','course_type','course_category']
+                
+                # load original info file
+                print('        Loading user info:')
+                U_INFO_NP = load(
+                    log_path =u_info_path,
+                    read_mode ='pandas',
+                    return_mode = 'values',
+                    encoding_ = 'utf-8',
+                    columns =u_info_col)
+                
+                print('        Loading course info:')
+                C_INFO_NP = load(
+                    log_path =c_info_path,
+                    read_mode ='pandas',
+                    return_mode = 'values',
+                    encoding_ = 'utf-8',
+                    columns =c_info_col
+                    )
+                
+                dict_c_info = course_info_list_to_dict(C_INFO_NP[1:,:])
+                dict_u_info = user_info_list_to_dict(U_INFO_NP[1:,:])
+
+                # load hash table
+                hash_path = 'hash_table_dict_file\\'+name
+                enroll_find_course = json.load(
+                    open(hash_path+'\\enroll_find_course.json','r'))
+                enroll_find_user   = json.load(
+                    open(hash_path+'\\enroll_find_user.json','r'))
+
+                # eID is dict index
+                info_dict_eID = make_info_dataset(
+                    return_mode = 'dict'
+                    ,dict_c_info  = dict_c_info
+                    ,dict_u_info  = dict_u_info
+                    ,enroll_find_course = enroll_find_course
+                    ,enroll_find_user   = enroll_find_user
+                    )
+
+                print('      assemble_info_data finish.')
+                return info_dict_eID
+
             def list_to_dict(
                 list_:list,
                 key_type  = 'int',
@@ -1059,6 +1352,9 @@ def Major_data_process(name:str,raw_folder_path:str):
                     label   = dict_enroll_label[int(e_id)]
                     new_dict[new_key] = label
                 return new_dict
+            
+            
+            
             print('    extract_feature_on_InfomationData running : ')
             # load hash table
             hash_path = 'hash_table_dict_file\\'+mode
@@ -1157,7 +1453,7 @@ def Major_data_process(name:str,raw_folder_path:str):
                 courses_studentAmount_and_drop_rate = json.load(
                     open('extracted_features\\courses_studentAmount_and_drop_rate.json','r'))
                 
-            
+            raw_course_and_user_info_dict         = assemble_info_data(name = mode)
             # Assemble
             print('      Start choose infomation features for ',mode,' data.')
             e_id_list = list(enroll_find_course.keys())
@@ -1188,6 +1484,7 @@ def Major_data_process(name:str,raw_folder_path:str):
 
                 e_id = int(e_id)
                 info_feature_dict[e_id] = [
+                     *raw_course_and_user_info_dict[e_id],
                      student_amount,
                      course_amount,
                      dropout_rate_of_course,
@@ -1202,14 +1499,14 @@ def Major_data_process(name:str,raw_folder_path:str):
 
         if name == 'train':
             
-            info_dict         = assemble_info_data(name = 'train')
+            # info_dict         = assemble_info_data(name = 'train')
             log_feature_dict  = extract_feature_on_LogData(dict_log)
             info_feature_dict = extract_feature_on_InfomationData(mode = 'train')
             # assemble
             
         if name == 'test':
             
-            info_dict         = assemble_info_data(name = 'test')
+            # info_dict         = assemble_info_data(name = 'test')
             log_feature_dict  = extract_feature_on_LogData(dict_log)
             info_feature_dict = extract_feature_on_InfomationData(mode = 'test')
             
@@ -1219,7 +1516,7 @@ def Major_data_process(name:str,raw_folder_path:str):
             row = 0  
             for e_id in log_feature_dict.keys():
                 Features[row] = [
-                    *info_dict[e_id],
+                   # *info_dict[e_id],
                     *log_feature_dict[e_id],
                     *info_feature_dict[e_id] ]
 
@@ -1231,7 +1528,7 @@ def Major_data_process(name:str,raw_folder_path:str):
             for e_id in log_feature_dict.keys():
                 e_id = int(e_id)
                 Features[e_id] = [
-                    *info_dict[e_id],
+                  #  *info_dict[e_id],
                     *log_feature_dict[e_id],
                     *info_feature_dict[e_id] ]
             print('  ALL features are ready to use.')
@@ -1334,3 +1631,5 @@ test_data,test_label = Major_data_process(
     raw_folder_path = 'raw_data_file\\')
 
 # 面对大型业务 如何以用户为主体 提高留存率 而不只是以单位课程的辍学率作为指标
+
+# %%
