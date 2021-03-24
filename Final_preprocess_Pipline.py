@@ -31,9 +31,8 @@ def _t(function):
         return result
     return function_timer
 
-
-def main(name:str,raw_folder_path:str):
-  
+def Major_data_process(name:str,raw_folder_path:str):
+    
 
     def preprocess(name,path):
         """[groupby enroll id and sort the log by time]
@@ -96,8 +95,8 @@ def main(name:str,raw_folder_path:str):
                         action_object, # int
                         session        # int]}
             """   
-            print('    log_groupby_to_dict running!')
-            print('    ',str(mode)+' log amount :',len(log),' rows')
+            print('\n    Log_groupby_to_dict running : \n')
+            print('      ',str(mode)+' log amount :',len(log),' rows')
             i = 0
             log_dict = {}
 
@@ -283,7 +282,8 @@ def main(name:str,raw_folder_path:str):
                 i+=1
                 if (i%print_batch)==0:print('already processed : ',i,'row logs')
 
-            print('    Groupby finish , export hash tables running!')
+            print('    log_groupby_to_dict finish. ')
+            print('\n    export hash tables running : \n')
             hash_tables_dict = {
                 'action_replace_dict' :action_replace_dict,
                 'object_replace_dict' :object_replace_dict,
@@ -301,7 +301,7 @@ def main(name:str,raw_folder_path:str):
             for name,data in hash_tables_dict.items():
                 path = hash_folder +str(mode)+'\\'+name +'.json'
                 json.dump(data,open(path,'w'))
-                print('already dump ',name,'.json to ',path)
+            print('      export hash tables finish.')
 
 
             if (test == True) and (i ==print_batch):
@@ -336,7 +336,7 @@ def main(name:str,raw_folder_path:str):
                                 ]
                     }
             """    
-            print('    time_convert_and_sort running.')
+            print('\n    time_convert_and_sort running : ')
             print('    Total action series:',len(log))
           
             import json
@@ -485,10 +485,10 @@ def main(name:str,raw_folder_path:str):
 
                 new_dict[int(e_id)] =  rebulid.tolist()
                 
-            print('    time_convert_and_sort finish.')  
+            print('    time_convert_and_sort finish. \n')  
             return new_dict
 
-        print('  Preprocess running !')    
+        print('\n  Preprocess running : \n')    
         # course infomation file
         c_info_path = 'raw_data_file\\course_info.csv'
         c_info_col = [
@@ -525,7 +525,7 @@ def main(name:str,raw_folder_path:str):
             encoding_ = 'utf-8', 
             columns =log_col)
 
-        log_dict = log_groupby_to_dict( 
+        dict_log = log_groupby_to_dict( 
             log_np[1:,:],
             mode = name)  
         # column 0 is column index 
@@ -533,13 +533,14 @@ def main(name:str,raw_folder_path:str):
         
         # sorted each log in dict by time
 
-        dict_log_path = 'after_processed_data_file\\'+name+'\\dict_'+name+'_log.json'
+       # dict_log_path = 'after_processed_data_file\\'+name+'\\dict_'+name+'_log.json'
         hash_folder_path = 'hash_table_dict_file\\'
         path_eID_find_cID = hash_folder_path +name+'\\enroll_find_course.json'
         
-        print('    Loading dict_log.')
-        dict_log = json.load(open(dict_log_path,'r'))
-        print('    Success load dict_log.')
+       # print('    Loading dict_log.')
+       # dict_log = json.load(open(dict_log_path,'r'))
+       # print('    Success load dict_log.')
+        
         # drop time gap
         dict_log_after_time_convert_and_sort = time_convert_and_sort(
             dict_log,
@@ -551,7 +552,7 @@ def main(name:str,raw_folder_path:str):
         json.dump(dict_log_after_time_convert_and_sort
             ,open(export_path,'w'))
         print('    Export finish , path :',export_path)
-        print('  preprocess finish.')
+        print('\n  Preprocess finish. \n')
         return dict_log_after_time_convert_and_sort
 
     def extract_feature(name:str,dict_log,return_node = 'dict')-> dict:
@@ -602,13 +603,15 @@ def main(name:str,raw_folder_path:str):
                             return log.values
 
                     else: # read full file
-                        print('      Start loading ',log_path)
+                        print('        Start loading ',log_path)
                         log = pd.read_csv(
                             log_path
                             ,encoding=encoding_
-                            ,names=columns)
+                            ,names=columns
+                            ,low_memory=False)
+
                         
-                    print('      Total length :',len(log),'rows')
+                        print('          Total length :',len(log),'rows')
                 if return_mode == 'df':return log
                 if return_mode == 'values':return log.values
 
@@ -793,13 +796,13 @@ def main(name:str,raw_folder_path:str):
                         ,course_duration
                     ]
 
-                    print('    Success concat and filter out ',name,' infomation in course_info and user_info . ')
                     if return_mode == 'dict':
                         dict_enroll_info[int(e_id)] = info_
                     else: 
                         if  return_mode == 'list':
                             list_enroll_info.append(info_)
-                    
+                print('      Success concat and filter out ',name,' infomation in course_info and user_info . ')
+                        
                 if return_mode == 'dict':
                     return dict_enroll_info
                 else: 
@@ -820,7 +823,6 @@ def main(name:str,raw_folder_path:str):
                 return_mode = 'values',
                 encoding_ = 'utf-8',
                 columns =u_info_col)
-            print('      Total length : ',len(U_INFO_NP),'rows.')
             
             print('      Loading course info:')
             C_INFO_NP = load(
@@ -830,8 +832,7 @@ def main(name:str,raw_folder_path:str):
                 encoding_ = 'utf-8',
                 columns =c_info_col
                 )
-            print('      Total length : ',len(C_INFO_NP),'rows.')
-            
+             
             dict_c_info = course_info_list_to_dict(C_INFO_NP[1:,:])
             dict_u_info = user_info_list_to_dict(U_INFO_NP[1:,:])
 
@@ -893,7 +894,7 @@ def main(name:str,raw_folder_path:str):
                         
                     
                     return static_list
-            print("    extract_feature_on_LogData running.")
+            print("\n    extract_feature_on_LogData running : \n")
             time_interval_dict   = {}
             static_interval_dict = {}
             enroll_scene_dict    = {}
@@ -968,7 +969,8 @@ def main(name:str,raw_folder_path:str):
                 static_and_scene_dict[int(e_id)] = static_and_scene_list
                 # break
             
-            print('    Success extract interval static values and actions transfer matrix.')
+            print('      extract_feature_on_LogData finish')
+            print('      Success extract interval static values and actions transfer matrix.')
             return static_and_scene_dict #static_interval_dict,enroll_scene_dict
         
         def extract_feature_on_InfomationData(
@@ -1013,7 +1015,7 @@ def main(name:str,raw_folder_path:str):
                             log_path
                             ,encoding=encoding_
                             ,names=columns)
-                        print('      Total length :',len(log),'rows.')
+                        print('        Total length :',len(log),'rows.')
                     
                 if return_mode == 'df'      :return log
                 if return_mode == 'ndarray' :return log.values
@@ -1194,8 +1196,8 @@ def main(name:str,raw_folder_path:str):
             print('    Extract Infomation features finish.')
             return info_feature_dict
 
-        print('  extract_feature running : ')
-        print('    Extracting ',name,'features :')
+        print('  Extract_feature running : ')
+        #print('    Extracting ',name,'features :')
 
 
         if name == 'train':
@@ -1211,7 +1213,7 @@ def main(name:str,raw_folder_path:str):
             log_feature_dict  = extract_feature_on_LogData(dict_log)
             info_feature_dict = extract_feature_on_InfomationData(mode = 'test')
             
-
+        print('  Extract_feature finish. ')
         if return_node == 'list':   
             Features = []
             row = 0  
@@ -1222,7 +1224,7 @@ def main(name:str,raw_folder_path:str):
                     *info_feature_dict[e_id] ]
 
                 row+=1
-            print('  ALL features are ready to use.')
+            print('\n  ALL features are ready to use.\n')
             return Features
         if return_node == 'dict':   
             Features = {}
@@ -1267,7 +1269,7 @@ def main(name:str,raw_folder_path:str):
                         log_path
                         ,encoding=encoding_
                         ,names=columns)
-                    print('    Total length : ',len(log),'rows.')
+                    print('      Total length : ',len(log),'rows.')
                     
                 
             if return_mode == 'df':return log
@@ -1302,15 +1304,14 @@ def main(name:str,raw_folder_path:str):
         
         dict_label = list_to_dict(list_ = np_label.tolist())
 
-        print('  load_label finish.')
+        print('  load_label finish.\n')
         return list(dict_label.values())
-
-        
-
+    
+    print('\n',name.capitalize()+'ing Mode Enable .')
+    print('Major Data Process is running : \n') 
     dict_log = preprocess(
         name=name, 
         path = raw_folder_path+name+'_log_t.csv')
-
     dict_data = extract_feature(
         name = name,
         dict_log = dict_log
@@ -1319,21 +1320,17 @@ def main(name:str,raw_folder_path:str):
 
         # HERE need return list type not dict type
     list_data  = list(dict_data.values())
-    
     list_label = load_label(
         mode = name,
         id_list=list(dict_data.keys()))
-    
+    print('Major Data Process is finish.') 
     return list_data,list_label 
 
-train_data,train_label = main(
+train_data,train_label = Major_data_process(
     name = 'train',
     raw_folder_path = 'raw_data_file\\')
-
-test_data,test_label = main(
+test_data,test_label = Major_data_process(
     name = 'test',
     raw_folder_path = 'raw_data_file\\')
 
-
-
-# %%
+# 面对大型业务 如何以用户为主体 提高留存率 而不只是以单位课程的辍学率作为指标
