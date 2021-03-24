@@ -44,8 +44,8 @@ def main(name:str,raw_folder_path:str):
         """    
         def load(
             log_path: str,
-            read_mode: str,
             return_mode: str,
+            read_mode='pandas',
             encoding_='utf-8',
             columns=None,
             test=TEST_OR_NOT)-> ndarray or DataFrame:
@@ -164,7 +164,7 @@ def main(name:str,raw_folder_path:str):
 
                 # id
                 enroll_id = int(row[0])
-                user_id   = row[1]
+                user_id   = int(row[1])
                 course_id = row[2]
 
                 # feature
@@ -180,21 +180,69 @@ def main(name:str,raw_folder_path:str):
                     action_object  = int(0)
                 else:action_object = row[5]
                 
-            # try:    
+
                 action_time = row[6]
 
 
                 # Making id hash dict
-                user_find_course[user_id]   = course_id
-                course_find_user[course_id] = user_id
+                
+                '''
+                def make_hash_table(main_key,sub_key,hash_table):
+                    try:
+                        if sub_key not in hash_table[main_key]:
+                            hash_table[main_key].append(sub_key)
+            
+                    except:
+                        hash_table[main_key] = [sub_key]
+                '''
+                
+                # user_find_course[user_id].append(course_id) 
+                try:
+                    if course_id not in user_find_course[user_id]:
+                        user_find_course[user_id].append(course_id)
+        
+                except:
+                    user_find_course[user_id] = [course_id]
+
+                # course_find_user[course_id].append(user_id) 
+                try:
+                    if user_id not in course_find_user[course_id]:
+                        course_find_user[course_id].append(user_id)
+        
+                except:
+                    course_find_user[course_id] = [user_id]
 
                 enroll_find_course[enroll_id] = course_id
-                course_find_enroll[course_id] = enroll_id
+                '''try:
+                    if course_id not in enroll_find_course[enroll_id]:
+                        enroll_find_course[enroll_id].append(course_id)
+        
+                except:
+                    enroll_find_course[enroll_id] = [course_id]
+                '''
+                # course_find_enroll[course_id].append(enroll_id)
+                try:
+                    if enroll_id not in course_find_enroll[course_id]:
+                        course_find_enroll[course_id].append(enroll_id)
+        
+                except:
+                    course_find_enroll[course_id] = [enroll_id]
+                # user_find_enroll[user_id].append(enroll_id)
+                try:
+                    if enroll_id not in user_find_enroll[user_id]:
+                        user_find_enroll[user_id].append(enroll_id)
+        
+                except:
+                    user_find_enroll[user_id] = [enroll_id]
 
-                user_find_enroll[user_id]   = enroll_id
                 enroll_find_user[enroll_id] = user_id
-                
-            
+                '''try:
+                    if user_id not in enroll_find_user[enroll_id]:
+                        enroll_find_user[enroll_id].append(user_id)
+        
+                except:
+                    enroll_find_user[enroll_id] = [user_id]
+                '''
                 # int replace str
                 try:
                     action = action_replace_dict[action]
@@ -291,8 +339,8 @@ def main(name:str,raw_folder_path:str):
                                 ]
                     }
             """    
-            print('dict total len :',len(log))
-            print(' convert running!')
+            print('Total series:',len(log))
+            print(' Time convert running!')
             import json
             import numpy as np
             dict_enrollID_find_courseID = json.load(open(path_eID_find_cID,'r'))
@@ -506,14 +554,14 @@ def main(name:str,raw_folder_path:str):
         
         return dict_log_after_time_convert_and_sort
 
-    def extract_feature(name:str,dict_log):
+    def extract_feature(name:str,dict_log,return_node = 'dict')-> dict:
         """[info feature : dropout rate of users and courses]
 
         Args:
             name (str): [description]
             dict_log ([type]): [description]
         """        
-        def assemble_info_data(name:str):
+        def assemble_info_data(name:str)-> dict:
             """[concat user info and course info index by enroll id]
 
             Args:
@@ -554,12 +602,13 @@ def main(name:str,raw_folder_path:str):
                             return log.values
 
                     else: # read full file
+                        print('Start loading ',log_path)
                         log = pd.read_csv(
                             log_path
                             ,encoding=encoding_
                             ,names=columns)
                         
-                    print('load running!')
+                    print('Load finish!')
                 if return_mode == 'df':return log
                 if return_mode == 'values':return log.values
 
@@ -574,11 +623,11 @@ def main(name:str,raw_folder_path:str):
                 """  
                 dict_ = {}
                 gender_replace_dict ={
-                    'nan' :0
+                    'nan':0
                     , 'male' :1
                     , 'female' :2}    
                 education_degree_replace_dict = {
-                    'nan' : 0
+                    'nan': 0
                     , 'Primary' :1
                     , 'Middle' :2
                     , "Bachelor's" :3
@@ -663,13 +712,11 @@ def main(name:str,raw_folder_path:str):
                     except:
                         course_category = int(0)
                     
-                    '''if start_time is np.nan:
-                        start_time = 0
-                    else:
+                    '''if start_time is np.:
+                        start_time = nan                    else:
                         start_time = np.datetime64(start_time)
-                    if end_time is np.nan:
-                        end_time = 0
-                    else:
+                    if end_time is np.:
+                        end_time = nan                    else:
                         end_time = np.datetime64(end_time)
                     '''
                 
@@ -833,11 +880,7 @@ def main(name:str,raw_folder_path:str):
 
                     else:
                         static_list = [
-                            np.nan,
-                            np.nan,
-                            np.nan,
-                            np.nan
-                        ]
+                            np.nan,np.nan ,np.nan ,np.nan ]
                         
                     
                     return static_list
@@ -920,7 +963,7 @@ def main(name:str,raw_folder_path:str):
         def extract_feature_on_InfomationData(
             mode: str,
             threshold_course_amount = int(3),
-            threshold_student_amount = int(3)):
+            threshold_student_amount = int(3))-> dict:
             """[caculate_droupout_rate]
 
             Returns:
@@ -936,12 +979,12 @@ def main(name:str,raw_folder_path:str):
                 encoding_='utf-8',
                 read_mode = 'pd',
                 columns=None,
-                train=train_OR_NOT)-> ndarray or DataFrame:
+                test=TEST_OR_NOT)-> ndarray or DataFrame:
                 '''读取csv文件 返回numpy数组'''
             
                 if read_mode == 'pd' :
                     import pandas as pd
-                    if train ==True: # only read 10000rows 
+                    if test ==True: # only read 10000rows 
                         reader = pd.read_csv(
                             log_path
                             ,encoding=encoding_
@@ -969,7 +1012,8 @@ def main(name:str,raw_folder_path:str):
                 list_:list,
                 key_type  = 'int',
                 value_type='int')-> dict:
-                """[convert dict to list use the 1st cloumn make index 2nd column make value]
+                """[convert dict to list 
+                use the 1st cloumn make index 2nd column make value]
 
                 Args:
                     list_ (list): [shape(n,2)]
@@ -1038,7 +1082,7 @@ def main(name:str,raw_folder_path:str):
                     course_amount = len(courses)
                     
                     if course_amount < int(threshold_course_amount):
-                        dropout_rate = np.nan()
+                        dropout_rate = np.nan
                     else:
                         dropout_rate = int((
                             sum(label_list)/len(label_list)
@@ -1060,7 +1104,7 @@ def main(name:str,raw_folder_path:str):
                     
                     user_amount = len(users)
                     if user_amount < threshold_student_amount:
-                        dropout_rate = np.nan()
+                        dropout_rate = np.nan
                     else:
                         dropout_rate = int((
                             sum(label_list)/len(label_list)
@@ -1098,27 +1142,28 @@ def main(name:str,raw_folder_path:str):
 
             for e_id in e_id_list:
 
-                e_id = int(e_id)
+                e_id = str(e_id) # load from json need str type key
                 c_id = enroll_find_course[e_id]
-                u_id = enroll_find_user[e_id]
+                u_id = str(enroll_find_user[e_id])
                
                 try:
                     student_amount         = courses_studentAmount_and_drop_rate[c_id][0],
                 except:
-                    student_amount = np.nan()
+                    student_amount = np.nan
                 try:
                     course_amount          = users_courseAmount_and_drop_rate[u_id][0],
                 except:
-                    course_amount = np.nan()
+                    course_amount = np.nan
                 try:
                     dropout_rate_of_course = courses_studentAmount_and_drop_rate[c_id][1],
                 except:
-                    dropout_rate_of_course = np.nan()
+                    dropout_rate_of_course = np.nan
                 try:
                     dropout_rate_of_user   = users_courseAmount_and_drop_rate[u_id][1]
                 except:
-                    dropout_rate_of_user = np.nan()
+                    dropout_rate_of_user = np.nan
 
+                e_id = int(e_id)
                 info_feature_dict[e_id] = [
                      student_amount,
                      course_amount,
@@ -1133,51 +1178,133 @@ def main(name:str,raw_folder_path:str):
 
         if name == 'train':
             
-                info_dict         = assemble_info_data(name = 'train')
-                log_feature_dict  = extract_feature_on_LogData(dict_log)
-                info_feature_dict = extract_feature_on_InfomationData(mode = 'train')
+            info_dict         = assemble_info_data(name = 'train')
+            log_feature_dict  = extract_feature_on_LogData(dict_log)
+            info_feature_dict = extract_feature_on_InfomationData(mode = 'train')
+            # assemble
+            
+        if name == 'test':
+            
+            info_dict         = assemble_info_data(name = 'test')
+            log_feature_dict  = extract_feature_on_LogData(dict_log)
+            info_feature_dict = extract_feature_on_InfomationData(mode = 'test')
+            
+
+        if return_node == 'list':   
+            Features = []
+            row = 0  
+            for e_id in log_feature_dict.keys():
+                Features[row] = [
+                    *info_dict[e_id],
+                    *log_feature_dict[e_id],
+                    *info_feature_dict[e_id] ]
+
+                row+=1
+            return Features
+        if return_node == 'dict':   
+            Features = {}
+            for e_id in log_feature_dict.keys():
+                e_id = int(e_id)
+                Features[e_id] = [
+                    *info_dict[e_id],
+                    *log_feature_dict[e_id],
+                    *info_feature_dict[e_id] ]
+            return Features
+
+    def load_label(mode:str,id_list: list)->list:
+        def load(
+            log_path: str,
+            return_mode: str,
+            read_mode='pandas',
+            encoding_='utf-8',
+            columns=None,
+            test=TEST_OR_NOT)-> ndarray or DataFrame:
+            '''读取csv文件 返回numpy数组'''
+            #if read_mode == 'cudf':import cudf as pd
+
+            if read_mode == 'pandas' :
+                import pandas as pd
+                if test ==True: # only read 10000rows 
+                    reader = pd.read_csv(
+                        log_path
+                        ,encoding=encoding_
+                        ,names=columns
+                        ,chunksize=chunk_size)
+                        
+                    for chunk in reader:
+                        # use chunk_size to choose the size of test rows instead of loop
+                        log = chunk
+                        return log.values
+
+                else: # read full file
+                    
+                    print('Start loading :',log_path)
+                    log = pd.read_csv(
+                        log_path
+                        ,encoding=encoding_
+                        ,names=columns)
+                    print('Loading finish !')
+                    
                 
-                # 组合以上三个 召唤神龙
+            if return_mode == 'df':return log
+            if return_mode == 'values':return log.values
 
+        def list_to_dict(
+                list_:list,
+                key_type  = 'int',
+                value_type='int')-> dict:
+                """[convert dict to list 
+                use the 1st cloumn make index 2nd column make value]
+
+                Args:
+                    list_ (list): [shape(n,2)]
                 
-        return log_feature_dict
+                Return: dict_ :w dict
 
-      
-    
+                """  
+                dict_ = {}
 
-    data_list  = None
-    label_list = None
-
-     
-    if name == 'test':
-        pass
-    
-    if name == 'train':
+                for item_ in list_:
+                    index_ = int(item_[0])
+                    value_ = int(item_[1])
+                    dict_[index_] = value_
+                
+                return dict_
+            
+        np_label = load(
+            name=name, 
+            log_path = raw_folder_path+name+'_truth.csv')
         
-        dict_train_log = preprocess(
-            name='train', 
-            path = raw_folder_path+'train_log.csv')
+        dict_label = list_to_dict(list = np_label.tolist())
 
-        dict_train_feature = extract_feature(
-            name = 'train',
-            dict_log = dict_train_log
-            )
-         
+        return list(dict_label.values())
+
+        
+
+    dict_log = preprocess(
+        name=name, 
+        path = raw_folder_path+name+'_log_t.csv')
+
+    dict_data = extract_feature(
+        name = name,
+        dict_log = dict_log
+        )
+    
+
         # HERE need return list type not dict type
-
-
+    list_data  = list(dict_data.values())
+    list_label = load_label(
+        mode = name,
+        id_list=list(dict_data.keys()))
     
+    return list_data,list_label 
 
-    
-    return data_list,label_list
-
+list_train_data,list_train_label = main(
+    name = 'train',
+    raw_folder_path = 'raw_data_file\\')
 
 list_test_data,list_test_label = main(
     name = 'test',
     raw_folder_path = 'raw_data_file\\')
 
-list_train_data,list_train_label = main(
-    name = 'train',
-    raw_file_folder_path = 'raw_data_file\\')
-
-
+# %%
