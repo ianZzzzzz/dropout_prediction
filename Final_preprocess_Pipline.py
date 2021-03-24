@@ -68,12 +68,12 @@ def main(name:str,raw_folder_path:str):
 
                 else: # read full file
                     
-                    print('Start loading :',log_path)
+                    print('    Loading :',log_path)
                     log = pd.read_csv(
                         log_path
                         ,encoding=encoding_
                         ,names=columns)
-                    print('Loading finish !')
+                    print('    Total length :',len(log),'rows.')
                     
                 
             if return_mode == 'df':return log
@@ -96,8 +96,8 @@ def main(name:str,raw_folder_path:str):
                         action_object, # int
                         session        # int]}
             """   
-            
-            print(str(mode)+' log amount :',len(log),' rows')
+            print('    log_groupby_to_dict running!')
+            print('    ',str(mode)+' log amount :',len(log),' rows')
             i = 0
             log_dict = {}
 
@@ -110,9 +110,6 @@ def main(name:str,raw_folder_path:str):
 
             course_find_enroll = {}
             course_find_user = {}
-
-
-            
 
             # Encoding 
 
@@ -286,7 +283,7 @@ def main(name:str,raw_folder_path:str):
                 i+=1
                 if (i%print_batch)==0:print('already processed : ',i,'row logs')
 
-        
+            print('    Groupby finish , export hash tables running!')
             hash_tables_dict = {
                 'action_replace_dict' :action_replace_dict,
                 'object_replace_dict' :object_replace_dict,
@@ -339,8 +336,9 @@ def main(name:str,raw_folder_path:str):
                                 ]
                     }
             """    
-            print('Total series:',len(log))
-            print(' Time convert running!')
+            print('    time_convert_and_sort running.')
+            print('    Total action series:',len(log))
+          
             import json
             import numpy as np
             dict_enrollID_find_courseID = json.load(open(path_eID_find_cID,'r'))
@@ -487,10 +485,10 @@ def main(name:str,raw_folder_path:str):
 
                 new_dict[int(e_id)] =  rebulid.tolist()
                 
-                
+            print('    time_convert_and_sort finish.')  
             return new_dict
 
-            
+        print('  Preprocess running !')    
         # course infomation file
         c_info_path = 'raw_data_file\\course_info.csv'
         c_info_col = [
@@ -539,19 +537,21 @@ def main(name:str,raw_folder_path:str):
         hash_folder_path = 'hash_table_dict_file\\'
         path_eID_find_cID = hash_folder_path +name+'\\enroll_find_course.json'
         
+        print('    Loading dict_log.')
         dict_log = json.load(open(dict_log_path,'r'))
-        
+        print('    Success load dict_log.')
         # drop time gap
         dict_log_after_time_convert_and_sort = time_convert_and_sort(
             dict_log,
             drop_zero = True,
             path_eID_find_cID= path_eID_find_cID )
         
+        print('    Exproting processed dict_log.')
         export_path = 'after_processed_data_file\\'+name+'\\dict_'+name+'_log_ordered.json'
         json.dump(dict_log_after_time_convert_and_sort
             ,open(export_path,'w'))
-
-        
+        print('    Export finish , path :',export_path)
+        print('  preprocess finish.')
         return dict_log_after_time_convert_and_sort
 
     def extract_feature(name:str,dict_log,return_node = 'dict')-> dict:
@@ -602,13 +602,13 @@ def main(name:str,raw_folder_path:str):
                             return log.values
 
                     else: # read full file
-                        print('Start loading ',log_path)
+                        print('      Start loading ',log_path)
                         log = pd.read_csv(
                             log_path
                             ,encoding=encoding_
                             ,names=columns)
                         
-                    print('Load finish!')
+                    print('      Total length :',len(log),'rows')
                 if return_mode == 'df':return log
                 if return_mode == 'values':return log.values
 
@@ -792,6 +792,8 @@ def main(name:str,raw_folder_path:str):
                         ,course_type
                         ,course_duration
                     ]
+
+                    print('    Success concat and filter out ',name,' infomation in course_info and user_info . ')
                     if return_mode == 'dict':
                         dict_enroll_info[int(e_id)] = info_
                     else: 
@@ -804,18 +806,23 @@ def main(name:str,raw_folder_path:str):
                     if  return_mode == 'list':
                         return    list_enroll_info
 
+            print('    assemble_info_data running : ')
             c_info_path = 'raw_data_file\\course_info.csv'
             u_info_path = 'raw_data_file\\user_info.csv'
             u_info_col = ['user_id','gender','education_degree','birth_year']
             c_info_col = ['id','course_id','start_time','end_time','course_type','course_category']
             
             # load original info file
+            print('      Loading user info:')
             U_INFO_NP = load(
                 log_path =u_info_path,
                 read_mode ='pandas',
                 return_mode = 'values',
                 encoding_ = 'utf-8',
                 columns =u_info_col)
+            print('      Total length : ',len(U_INFO_NP),'rows.')
+            
+            print('      Loading course info:')
             C_INFO_NP = load(
                 log_path =c_info_path,
                 read_mode ='pandas',
@@ -823,7 +830,8 @@ def main(name:str,raw_folder_path:str):
                 encoding_ = 'utf-8',
                 columns =c_info_col
                 )
-
+            print('      Total length : ',len(C_INFO_NP),'rows.')
+            
             dict_c_info = course_info_list_to_dict(C_INFO_NP[1:,:])
             dict_u_info = user_info_list_to_dict(U_INFO_NP[1:,:])
 
@@ -843,6 +851,7 @@ def main(name:str,raw_folder_path:str):
                 ,enroll_find_user   = enroll_find_user
                 )
 
+            print('    assemble_info_data finish.')
             return info_dict_eID
 
         def extract_feature_on_LogData(dict_log)-> dict:
@@ -884,7 +893,7 @@ def main(name:str,raw_folder_path:str):
                         
                     
                     return static_list
-
+            print("    extract_feature_on_LogData running.")
             time_interval_dict   = {}
             static_interval_dict = {}
             enroll_scene_dict    = {}
@@ -958,6 +967,8 @@ def main(name:str,raw_folder_path:str):
                 static_and_scene_list = static_list
                 static_and_scene_dict[int(e_id)] = static_and_scene_list
                 # break
+            
+            print('    Success extract interval static values and actions transfer matrix.')
             return static_and_scene_dict #static_interval_dict,enroll_scene_dict
         
         def extract_feature_on_InfomationData(
@@ -977,12 +988,12 @@ def main(name:str,raw_folder_path:str):
                 log_path: str,
                 return_mode: str,
                 encoding_='utf-8',
-                read_mode = 'pd',
+                read_mode = 'pandas',
                 columns=None,
                 test=TEST_OR_NOT)-> ndarray or DataFrame:
                 '''读取csv文件 返回numpy数组'''
             
-                if read_mode == 'pd' :
+                if read_mode == 'pandas' :
                     import pandas as pd
                     if test ==True: # only read 10000rows 
                         reader = pd.read_csv(
@@ -997,12 +1008,12 @@ def main(name:str,raw_folder_path:str):
                             return log.values
 
                     else: # read full file
-                        print('Start loading ',log_path)
+                        print('      Start loading ',log_path)
                         log = pd.read_csv(
                             log_path
                             ,encoding=encoding_
                             ,names=columns)
-                        print('Loading finsih!')
+                        print('      Total length :',len(log),'rows.')
                     
                 if return_mode == 'df'      :return log
                 if return_mode == 'ndarray' :return log.values
@@ -1046,6 +1057,7 @@ def main(name:str,raw_folder_path:str):
                     label   = dict_enroll_label[int(e_id)]
                     new_dict[new_key] = label
                 return new_dict
+            print('    extract_feature_on_InfomationData running : ')
             # load hash table
             hash_path = 'hash_table_dict_file\\'+mode
             
@@ -1060,6 +1072,7 @@ def main(name:str,raw_folder_path:str):
                 open(hash_path+'\\enroll_find_user.json','r'))
 
             if mode == 'train':
+                print('      Training mode :')
                 enroll_find_label = list_to_dict(
                     load(
                         log_path='raw_data_file\\'+name+'_truth.csv'
@@ -1070,7 +1083,9 @@ def main(name:str,raw_folder_path:str):
                     enroll_find_course = enroll_find_course,
                     enroll_find_user   = enroll_find_user,
                     dict_enroll_label  = enroll_find_label )
+                
                 # users means user's
+                print(  '      Start compute course dropout rate and student amount .' )
                 users_courseAmount_and_drop_rate = {}
                 for u_id,courses in user_find_course.items():
                     label_list = []
@@ -1093,7 +1108,10 @@ def main(name:str,raw_folder_path:str):
                         dropout_rate ]
                     
                     #json.dump(users_courseAmount_and_drop_rate,open('json_file\\info_2.0\\users_courseAmount_and_drop_rate.json','w'))
+                print('      Compute finish.')
+                
                 # courses means course's
+                print('      Start compute student dropout rate and course amount .' )
                 courses_studentAmount_and_drop_rate = {}
                 for c_id,users in course_find_user.items():
                     label_list = []
@@ -1112,11 +1130,12 @@ def main(name:str,raw_folder_path:str):
                     courses_studentAmount_and_drop_rate[c_id] = [
                         user_amount,
                         dropout_rate ]
-                
+                print('      Compute finish.')
                 # Extract Finish
 
                 # Export 
                 # {u_id:[course_amount,drop_rate]}
+                print('      Exporting dropout rate and amount features')
                 json.dump(
                     users_courseAmount_and_drop_rate,
                     open('extracted_features\\users_courseAmount_and_drop_rate.json','w'))
@@ -1125,18 +1144,20 @@ def main(name:str,raw_folder_path:str):
                 json.dump(
                     courses_studentAmount_and_drop_rate,
                     open('extracted_features\\courses_studentAmount_and_drop_rate.json','w'))
-
-            if mode== 'test':
-                
+                print('      Export finfish, folder path : extracted_feature\\ .',)
+            if mode == 'test':
+                print('      Testing mode ,load train-ed features from path : extracted_feature\\')
                 # {u_id:[course_amount,drop_rate]}
                 users_courseAmount_and_drop_rate    = json.load(
-                    open('extracted_features\\user_dropout_rate.json','r'))
+                    open('extracted_features\\users_courseAmount_and_drop_rate.json','r'))
                 
                 # {c_id:[student_amount,drop_rate]}
                 courses_studentAmount_and_drop_rate = json.load(
                     open('extracted_features\\courses_studentAmount_and_drop_rate.json','r'))
                 
+            
             # Assemble
+            print('      Start choose infomation features for ',mode,' data.')
             e_id_list = list(enroll_find_course.keys())
             info_feature_dict = {}
 
@@ -1170,10 +1191,11 @@ def main(name:str,raw_folder_path:str):
                      dropout_rate_of_course,
                      dropout_rate_of_user
                     ]
-            
+            print('    Extract Infomation features finish.')
             return info_feature_dict
 
-            
+        print('  extract_feature running : ')
+        print('    Extracting ',name,'features :')
 
 
         if name == 'train':
@@ -1200,6 +1222,7 @@ def main(name:str,raw_folder_path:str):
                     *info_feature_dict[e_id] ]
 
                 row+=1
+            print('  ALL features are ready to use.')
             return Features
         if return_node == 'dict':   
             Features = {}
@@ -1209,12 +1232,13 @@ def main(name:str,raw_folder_path:str):
                     *info_dict[e_id],
                     *log_feature_dict[e_id],
                     *info_feature_dict[e_id] ]
+            print('  ALL features are ready to use.')
             return Features
 
     def load_label(mode:str,id_list: list)->list:
         def load(
             log_path: str,
-            return_mode: str,
+            return_mode='values',
             read_mode='pandas',
             encoding_='utf-8',
             columns=None,
@@ -1238,12 +1262,12 @@ def main(name:str,raw_folder_path:str):
 
                 else: # read full file
                     
-                    print('Start loading :',log_path)
+                    print('    Start loading :',log_path)
                     log = pd.read_csv(
                         log_path
                         ,encoding=encoding_
                         ,names=columns)
-                    print('Loading finish !')
+                    print('    Total length : ',len(log),'rows.')
                     
                 
             if return_mode == 'df':return log
@@ -1270,13 +1294,15 @@ def main(name:str,raw_folder_path:str):
                     dict_[index_] = value_
                 
                 return dict_
-            
-        np_label = load(
-            name=name, 
-            log_path = raw_folder_path+name+'_truth.csv')
         
-        dict_label = list_to_dict(list = np_label.tolist())
+        print('  load_label running : ')
+        np_label = load(
+        
+            log_path = raw_folder_path+mode+'_truth.csv')
+        
+        dict_label = list_to_dict(list_ = np_label.tolist())
 
+        print('  load_label finish.')
         return list(dict_label.values())
 
         
@@ -1293,18 +1319,21 @@ def main(name:str,raw_folder_path:str):
 
         # HERE need return list type not dict type
     list_data  = list(dict_data.values())
+    
     list_label = load_label(
         mode = name,
         id_list=list(dict_data.keys()))
     
     return list_data,list_label 
 
-list_train_data,list_train_label = main(
+train_data,train_label = main(
     name = 'train',
     raw_folder_path = 'raw_data_file\\')
 
-list_test_data,list_test_label = main(
+test_data,test_label = main(
     name = 'test',
     raw_folder_path = 'raw_data_file\\')
+
+
 
 # %%
