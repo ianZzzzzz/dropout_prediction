@@ -1,247 +1,137 @@
-'''>>> len(t[3])
-    130
-    >>> len(t[4])
-    219'''
-from typing import Dict
-from typing import List
-def Analy(
-    drop_list: list,
-    nondrop_list: list)-> dict:
+#%%
+RANDOM_STATE = 1
+class Model:
+    def __init__(self, mode, data, label):
+        self.mode = mode
+        self.data = data
+        self.label = label
+        self.model = None
 
-    def count_scene(log_:list)->dict:
-        """[
-            1 统计场景出现的频次
-            ]
 
-        Args:
-            log_ (list): [description]
-
-        Returns:
-            dict: [description]
-        """    
-        up_ = 15
-        down_ = 3
-
-        count_dict = {}
-        count_sample_dict = {}
-        for length in range(down_,up_):
-            print('Counting length :',length)
-            
-            count_for_length_x = {}
-            count_sample_for_length_x = {}
-            
-            for series in log_:
-                
-                mid_compute_dict = {}
-                
-                for i in range(len(series) -length):
-                    str_ = str(series[i])
-                    for i_ in range(length-1):
-
-                        str_next = str(series[i+1+i_])
-                        str_ = str_ +str_next
-
-                    try:
-                        mid_compute_dict[str_]+=1
-                    except:
-                        mid_compute_dict[str_] = 1
-            # print(mid_compute_dict)
-                # in a series
-                for index,value in mid_compute_dict.items():
-
-                    try:
-                        count_for_length_x[index]    += value
-                        
-                        count_sample_for_length_x[index] +=1
-                    except:
-                        count_for_length_x[index]     = value
-
-                        count_sample_for_length_x[index] =1
-
-            count_dict[length] = count_for_length_x
-            count_sample_dict[length] = count_sample_for_length_x
-
-            
-        return count_dict,count_sample_dict
-    
-    def compute(
-        series_num:int,
-        count_dict:dict,
-        count_sample_dict:dict)->Dict[str,list]:
-        """
-        para:[
-            1 序列数量 :int
-            2 场景发生次数 :dict
-            3 发生该场景的序列数量 :dict
-        ] 
-        return [ 
-            rate_sample_coverage ,
-            avg_item_perSample ]
-        """    
-        final_result_dict = {}        
-        sample_number    = series_num
-        #i = 0
-        for scene_length ,datas_dict in count_dict.items():
-         
-            sample_data_dict = count_sample_dict[scene_length]
-
-            for scene__,value__ in datas_dict.items():
-                pass
-                #i +=1
-                #if i%100000==0:print('compute :',i,'scenes')
-                count_by_items   = value__
-                count_by_samples = sample_data_dict[scene__]
-                
-                rate_sample_coverage = count_by_samples/sample_number
-                if count_by_samples ==0:
-                    avg_item_perSample = 0
-                else:
-                    avg_item_perSample =  count_by_items/count_by_samples          
-
-                final_result_dict[scene__] = [rate_sample_coverage , avg_item_perSample]
-
-        return final_result_dict
-
-    def compare(
-        drop_list: list,
-        nondrop_list: list,
-        coverage_threshold = 10,
-        avg_threshold = 5)-> dict:
+    def measure(self,mode:str):
         pass
-        result = {}
-        for name,data in {'drop':drop_list,'nondrop':nondrop_list}.items():
-            
-            count_dict, count_sample_dict = count_scene(data)
+    def train(self ,mode, data, label):
+        def show_info(self):
+            pass
 
-            result[name] = compute(
-                series_num = len(data),
-                count_dict= count_dict,
-                count_sample_dict = count_sample_dict )
+        from xgboost import XGBClassifier # sklearn style api   
+        params = {'':''}
+        XGB = XGBClassifier(params)
         
-        import json
-        json.dump(result,open('compute_result_drop_nondrop.json','w'))
+        self.model = XGB.fit(
+            X=self.data,
+            y=self.label)
+
         
-        final_gap_dict = {}
-        i = 0
-        print('dict len :',len(result['drop']))
-        for scene,data in result['drop'].items():
+    def predict(self):
 
-            i+=1
-            if i%10000==0:print('i :',i)
+        predict_label = self.model.predict(data)
 
-            coverage_drop = result['drop'][scene][0]
-            avg_drop = result['drop'][scene][1]
-            try:
-                coverage_nondrop = result['nondrop'][scene][0]
-                avg_nondrop = result['nondrop'][scene][1]
-
-                gap_coverage = int(abs( coverage_nondrop-coverage_drop)*100)
-                gap_avg = int(abs(avg_drop-avg_nondrop))
-                if (gap_coverage>= coverage_threshold) or (gap_avg >=avg_threshold):
-                        final_gap_dict[scene] = [gap_coverage,gap_avg]
-            except:
-                    pass
-        return final_gap_dict
-
-    gap = compare(nondrop_list= nondrop_list,drop_list= drop_list)
-   
-    return gap
-
-t = Analy(drop_list=list_droped_series,nondrop_list=list_nondrop_series)
-drop =[
-    [11,12,13,11,12,13,1],
-    [11,12,13,11,12,13,1],
-    [11,12,13,11,12,13,1],
-    [11,12,13,11,12,13,1]]
-nondrop =[
-    [21,22,23,24,25,26,1],
-    [11,12,13,24,25,26,1],
-    [21,22,23,24,25,26,1],
-    [11,12,13,24,25,26,1]]
-
-
-t,s = t_count_scene(data)
-
-x= compute(
-    series_num= len(data),
-    count_dict=t,
-    count_sample_dict= s
-)
-
-
-def Analy():
-    pass
-    """[
-        1 对比辍学与非辍学数据集的频次数据，选出覆盖率差别大的场景
-    ]
-    """
-
-def part_count_scene(
-    logs:dict,
-    scene_:str)->int:
-
-    length = int(len(scene_))# /2)
-    
-    print('Counting scene :',scene_)
-    
-    
-    result_dict = {}
-    for name_,log_ in logs.items():
-        count_by_samples = 0
-        count_by_items = 0
-        for series in log_:
         
-            control = 0
-            #  if c%1000 ==0 :print('already enumerate :',c)
-            for i in range(len(series) -length):
-                str_ = str(series[i])
-                for i_ in range(length-1):
-                    
-                    str_next = str(series[i+1+i_])
-                    str_ = str_ +str_next
+    def save_model(self,path: str):
+        pass
+    def load_model(self,path: str):
+        pass
 
-                if str_ == scene_:
-                    control = 1
-                    count_by_items +=1
-                
-            if control ==1:
-                count_by_samples +=1
+    def __str__(self):
+        return ' Name : {}, Age : {}, Gender : {} '.format(
+            self.mode,self.data,self.label)
 
-        result_dict[name_]=[
-            len(log_),
-            int(count_by_items),
-            int(count_by_samples)]
+# train
+xgb_model = Model.train(
+    mode='xgb',data = '',label='',
+    show_info = True)
+# xgb is training 
+# measurment： accuracy
+# interactive plot
+
+
+predict_result = xgb_model.predict(data = '',label = '')
+# use xgb-model pridict     
+# measurment：mae
+# interactive plot
+
+# save
+xgb_model.save_model(path = '')
+# load model
+xgb_model = Model.load_model(path = '')
+
     
-    def analy_()->None:  
+# %%
 
-        def compute(name_:str)->list:
-            """
-            return [ 
-                rate_sample_coverage ,
-                avg_item_perSample ]
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar 25 23:28:29 2017
+@author: wyl
+original link: https://www.yanlongwang.net/Python/python-interactive-mode/
+"""
 
-            """            
-            sample_number    = result_dict[name_][0]
-            count_by_items   = result_dict[name_][1]
-            count_by_samples = result_dict[name_][2]
-            
-            rate_sample_coverage = count_by_samples/sample_number
-            avg_item_perSample =  count_by_items/(count_by_samples+1)          
-            return [ 
-                rate_sample_coverage ,
-                avg_item_perSample ]
+import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
+import numpy as np
+import math
+    
+plt.close()  #clf() # 清图  cla() # 清坐标轴 close() # 关窗口
+fig=plt.figure()
 
-        drop_list = compute('drop')
-        nondrop_list = compute('nondrop')
-        gap_coverage = int(abs( drop_list[0]-nondrop_list[0])*100)
-        gap_avg = int(abs(drop_list[1]-nondrop_list[1] ))
+ax=fig.add_subplot(1,1,1)
+ax.axis("equal") #设置图像显示的时候XY轴比例
+plt.grid(True) #添加网格
 
-        if (gap_coverage>= 5) or (gap_avg >=5):
+plt.ion()  #interactive mode on
 
-            print(
-                'gap_coverage :',gap_coverage,'%',
-                '\ngap_avg :',gap_avg)
+for t in range(10):
 
-    analy_()
-    return None
+    #障碍物船只轨迹
+    #obsX=IniObsX+IniObsSpeed*math.sin(IniObsAngle/180*math.pi)*t
+    #obsY=IniObsY+IniObsSpeed*math.cos(IniObsAngle/180*math.pi)*t
+    
+    obsX = t
+    obsY = math.cos(t)
+    
+    ax.scatter(obsX,obsY,c='b',marker='.')  #散点图
+    #ax.lines.pop(1)  删除轨迹
+    #下面的图,两船的距离
+    plt.pause(0.001)
 
+
+# %%
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+
+def update_line(num, data, line):
+    line.set_data(data[..., :num])
+    return line,
+
+fig1 = plt.figure()
+
+data = np.random.rand(2, 25)
+l, = plt.plot([], [], 'r-')
+plt.xlim(0, 1)
+plt.ylim(0, 1)
+plt.xlabel('x')
+plt.title('test')
+line_ani = animation.FuncAnimation(
+    fig1, update_line, 25, fargs=(data, l),
+    interval=50, blit=True)
+
+# To save the animation, use the command: line_ani.save('lines.mp4')
+
+fig2 = plt.figure()
+
+x = np.arange(-9, 10)
+y = np.arange(-9, 10).reshape(-1, 1)
+base = np.hypot(x, y)
+ims = []
+for add in np.arange(15):
+    ims.append((plt.pcolor(x, y, base + add, norm=plt.Normalize(0, 30)),))
+
+im_ani = animation.ArtistAnimation(fig2, ims, interval=50, repeat_delay=3000,
+                                   blit=True)
+# To save this second animation with some metadata, use the following command:
+# im_ani.save('im.mp4', metadata={'artist':'Guido'})
+
+plt.show()

@@ -11,8 +11,8 @@ import json
 
 TEST_OR_NOT = False
 print_batch = int(1000000)
-chunk_size = int(10000) # enable only when TEST_OR_NOT = True
-
+chunk_size  = int(10000) # enable only when TEST_OR_NOT = True
+                
 def _t(function):
     from functools import wraps
     import time
@@ -1623,12 +1623,29 @@ def Major_data_process(name:str,raw_folder_path:str):
     print('Major Data Process is finish.') 
     return list_data,list_label 
 
+class Model:
+    def __init__(self,data:list,label:list,mode:str):
+        pass
+
 train_data,train_label = Major_data_process(
     name = 'train',
     raw_folder_path = 'raw_data_file\\')
 test_data,test_label = Major_data_process(
     name = 'test',
     raw_folder_path = 'raw_data_file\\')
+
+# training process
+model = Model.train(
+    train_data,
+    train_label)
+
+# predict process
+result = Model.predict(
+    test_data,
+    test_label)
+
+
+
 
 # 面对大型业务 如何以用户为主体 提高留存率 而不只是以单位课程的辍学率作为指标
 
