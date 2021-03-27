@@ -307,9 +307,9 @@ def Major_data_process(name:str,raw_folder_path:str):
             if (test == True) and (i ==print_batch):
                 return log_dict
             else:
-                json.dump(
-                    log_dict,
-                    open('after_processed_data_file'+'\\'+str(mode)+'\\dict_'+str(mode)+'_log.json','w'))
+                #json.dump(
+                #    log_dict,
+                #    open('after_processed_data_file'+'\\'+str(mode)+'\\dict_'+str(mode)+'_log.json','w'))
                 return log_dict
 
         def time_convert_and_sort(
@@ -528,25 +528,27 @@ def Major_data_process(name:str,raw_folder_path:str):
         dict_log = log_groupby_to_dict( 
             log_np[1:,:],
             mode = name)  
+        log_np = None # release ram
+
         # column 0 is column index 
         # columns : e_id , action , time , c_id
         
         # sorted each log in dict by time
 
-       # dict_log_path = 'after_processed_data_file\\'+name+'\\dict_'+name+'_log.json'
+        # dict_log_path = 'after_processed_data_file\\'+name+'\\dict_'+name+'_log.json'
         hash_folder_path = 'hash_table_dict_file\\'
         path_eID_find_cID = hash_folder_path +name+'\\enroll_find_course.json'
         
-       # print('    Loading dict_log.')
-       # dict_log = json.load(open(dict_log_path,'r'))
-       # print('    Success load dict_log.')
+        # print('    Loading dict_log.')
+        # dict_log = json.load(open(dict_log_path,'r'))
+        # print('    Success load dict_log.')
         
         # drop time gap
         dict_log_after_time_convert_and_sort = time_convert_and_sort(
             dict_log,
             drop_zero = True,
             path_eID_find_cID= path_eID_find_cID )
-        
+        dict_log = None
         print('    Exproting processed dict_log.')
         export_path = 'after_processed_data_file\\'+name+'\\dict_'+name+'_log_ordered.json'
         json.dump(dict_log_after_time_convert_and_sort
@@ -957,7 +959,8 @@ def Major_data_process(name:str,raw_folder_path:str):
                 # 3 head/tail gap
                     
                 i+=1
-                if (i%1000)==0:print(i)
+                if (i%5000)==0:
+                    print('already processed  ',i,' enrollment id')
 
                 # time_interval_dict[int(e_id)] = interval_list
                 long_static.extend(short_static)
@@ -1466,19 +1469,19 @@ def Major_data_process(name:str,raw_folder_path:str):
                 u_id = str(enroll_find_user[e_id])
                
                 try:
-                    student_amount         = courses_studentAmount_and_drop_rate[c_id][0],
+                    student_amount         = *courses_studentAmount_and_drop_rate[c_id][0],
                 except:
                     student_amount = np.nan
                 try:
-                    course_amount          = users_courseAmount_and_drop_rate[u_id][0],
+                    course_amount          = *users_courseAmount_and_drop_rate[u_id][0],
                 except:
                     course_amount = np.nan
                 try:
-                    dropout_rate_of_course = courses_studentAmount_and_drop_rate[c_id][1],
+                    dropout_rate_of_course = *courses_studentAmount_and_drop_rate[c_id][1],
                 except:
                     dropout_rate_of_course = np.nan
                 try:
-                    dropout_rate_of_user   = users_courseAmount_and_drop_rate[u_id][1]
+                    dropout_rate_of_user   = *users_courseAmount_and_drop_rate[u_id][1]
                 except:
                     dropout_rate_of_user = np.nan
 
@@ -1608,31 +1611,43 @@ def Major_data_process(name:str,raw_folder_path:str):
     print('Major Data Process is running : \n') 
     dict_log = preprocess(
         name=name, 
-        path = raw_folder_path+name+'_log_t.csv')
+        path = raw_folder_path+name+'_log.csv')
+
     dict_data = extract_feature(
         name = name,
         dict_log = dict_log
         )
-    
+    dict_log = None # release ram
 
-        # HERE need return list type not dict type
+        
     list_data  = list(dict_data.values())
     list_label = load_label(
         mode = name,
         id_list=list(dict_data.keys()))
-    print('Major Data Process is finish.') 
+    
+    
+    json.dump(
+        list_data,
+        open('Final_Dataset\\'+name+'_data.json','w'))
+    json.dump(
+        list_label,
+        open('Final_Dataset\\'+name+'_label.json','w'))
+    print('Major Data Process is finish.')     
     return list_data,list_label 
 
-class Model:
-    def __init__(self,data:list,label:list,mode:str):
-        pass
-
+#%%
 train_data,train_label = Major_data_process(
-    name = 'train',
-    raw_folder_path = 'raw_data_file\\')
+    name = 'train',raw_folder_path = 'raw_data_file\\')
+
+
+#%%
 test_data,test_label = Major_data_process(
     name = 'test',
     raw_folder_path = 'raw_data_file\\')
+#%%
+class Model:
+    def __init__(self,data:list,label:list,mode:str):
+        pass
 
 # training process
 model = Model.train(
