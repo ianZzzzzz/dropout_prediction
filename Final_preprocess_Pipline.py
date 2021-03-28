@@ -3,36 +3,15 @@ from typing import List, Dict
 from numpy import ndarray
 from numpy import datetime64
 from pandas import DataFrame
-# 
-from scipy import stats
-import pandas as pd
-import numpy as np
-import json
-
-TEST_OR_NOT = False
-print_batch = int(1000000)
-chunk_size  = int(10000) # enable only when TEST_OR_NOT = True
-                
-def _t(function):
-    from functools import wraps
-    import time
-    '''
-    用装饰器实现函数计时
-    :param function: 需要计时的函数
-    :return: None
-    '''
-    @wraps(function)
-    def function_timer(*args, **kwargs):
-        print ('[Function: {name} start...]'.format(name = function.__name__))
-        t0 = time.time()
-        result = function(*args, **kwargs)
-        t1 = time.time()
-        print ('[Function: {name} finished, spent time: {time:.2f}s]'.format(name = function.__name__,time = t1 - t0))
-        return result
-    return function_timer
 
 def Major_data_process(name:str,raw_folder_path:str):
-    
+    TEST_OR_NOT = False
+    print_batch = int(1000000)
+    chunk_size  = int(10000) # enable only when TEST_OR_NOT = True
+    from scipy import stats
+    import pandas as pd
+    import numpy as np
+    import json
 
     def preprocess(name,path):
         """[groupby enroll id and sort the log by time]
@@ -563,7 +542,14 @@ def Major_data_process(name:str,raw_folder_path:str):
         Args:
             name (str): [description]
             dict_log ([type]): [description]
+        Return:
+            [
+                mean,var,skew,kurtosis # long interval
+                mean,var,skew,kurtosis # short interval
+                scene_transfer_count  # transfor matrix 4*4
+            ]
         """        
+        
         def assemble_info_data(name:str)-> dict:
             """[concat user info and course info ,index by enroll id]
 
@@ -872,6 +858,7 @@ def Major_data_process(name:str,raw_folder_path:str):
                     scene_transfer_count  # transfor matrix 4*4
                 ]
             """    
+            THERSHOD_long_interval = int(60*5)
             def static_(interval_list):
                     
                     if len(interval_list) > int(3):
@@ -928,7 +915,8 @@ def Major_data_process(name:str,raw_folder_path:str):
                     next_session = row_next[3]
                     try:
                         time_interval = int(next_time - now_time)
-                        if time_interval >int(60*15): # half hour 
+                        
+                        if time_interval >THERSHOD_long_interval: # 
                             long_interval_list.append(time_interval)
                         else:
                             short_interval_list.append(time_interval)
@@ -1467,23 +1455,29 @@ def Major_data_process(name:str,raw_folder_path:str):
                 e_id = str(e_id) # load from json need str type key
                 c_id = enroll_find_course[e_id]
                 u_id = str(enroll_find_user[e_id])
-               
+
+
                 try:
-                    student_amount         = *courses_studentAmount_and_drop_rate[c_id][0],
+                    student_amount         = courses_studentAmount_and_drop_rate[c_id][0],
+                    student_amount = student_amount[0]
                 except:
                     student_amount = np.nan
                 try:
-                    course_amount          = *users_courseAmount_and_drop_rate[u_id][0],
+                    course_amount          = users_courseAmount_and_drop_rate[u_id][0],
+                    course_amount = course_amount[0]
                 except:
                     course_amount = np.nan
                 try:
-                    dropout_rate_of_course = *courses_studentAmount_and_drop_rate[c_id][1],
+                    dropout_rate_of_course = courses_studentAmount_and_drop_rate[c_id][1],
+                    dropout_rate_of_course = dropout_rate_of_course[0]
                 except:
                     dropout_rate_of_course = np.nan
                 try:
-                    dropout_rate_of_user   = *users_courseAmount_and_drop_rate[u_id][1]
+                    dropout_rate_of_user   = users_courseAmount_and_drop_rate[u_id][1]
+                    #dropout_rate_of_user = dropout_rate_of_user[0]
                 except:
                     dropout_rate_of_user = np.nan
+
 
                 e_id = int(e_id)
                 info_feature_dict[e_id] = [
@@ -1612,7 +1606,9 @@ def Major_data_process(name:str,raw_folder_path:str):
     dict_log = preprocess(
         name=name, 
         path = raw_folder_path+name+'_log.csv')
-
+    dict_log_path = 'after_processed_data_file\\'+name+'\\dict_'+name+'_log_ordered.json'
+        
+   
     dict_data = extract_feature(
         name = name,
         dict_log = dict_log
@@ -1633,31 +1629,108 @@ def Major_data_process(name:str,raw_folder_path:str):
         list_label,
         open('Final_Dataset\\'+name+'_label.json','w'))
     print('Major Data Process is finish.')     
-    return list_data,list_label 
+    def to_df(
+        sample:list,
+        label: list)->DataFrame:
+        
+        df_data = pd.DataFrame(
+            data=sample,
+            columns=[
+                'gender','birth_year' ,'edu_degree',
+                'course_category','course_type','course_duration',
+                'L_mean','L_var','L_skew','L_kurtosis',
+                'S_mean','S_var','S_skew','S_kurtosis',
+                'video-video','video-answer','video-comment','video-courseware',
+                'answer-video','answer—answer','answer-comment','answer-courseware',
+                'comment-video','comment-answer','comment-comment','comment-courseware',
+                'courseware-video','courseware-answer','courseware-comment','courseware-courseware',
+                'course_amount','dropout rate of course',
+                'student_amount',' dropout rate of user']
+            )
 
-#%%
+        df_label = pd.DataFrame(
+            data=label,
+            columns=['drop_or_not']
+        )
+        return df_data,df_label
+
+    return to_df(list_data,list_label) 
+
 train_data,train_label = Major_data_process(
     name = 'train',raw_folder_path = 'raw_data_file\\')
-
-
-#%%
 test_data,test_label = Major_data_process(
     name = 'test',
     raw_folder_path = 'raw_data_file\\')
+
+
 #%%
 class Model:
-    def __init__(self,data:list,label:list,mode:str):
+    def __init__(self, mode, data, label):
+        self.mode = mode
+        self.data = data
+        self.label = label
+        self.model = None
+
+    def measure(self,mode:str):
+        pass
+    def train(self ):
+       
+        def preprocess(data):
+            import numpy as np
+            from sklearn.preprocessing import StandardScaler
+            from sklearn.preprocessing import MinMaxScaler
+            from sklearn.pipeline import make_pipeline
+            from sklearn.impute import SimpleImputer
+            std=StandardScaler()
+            mm = MinMaxScaler()
+            si = SimpleImputer(np.nan,'mean')
+            pipeline=make_pipeline(
+                si,
+                std,
+                mm)
+            data = pipeline.fit_transform(data)
+            return data
+        from xgboost import XGBClassifier # sklearn style api   
+        params = {}
+        XGB = XGBClassifier(
+            learning_rate= 0.05,
+            max_depth=10
+        )
+    
+  
+
+        self.model = XGB.fit(
+            X=preprocess(self.data),
+            y=self.label)
+
+        
+    def predict(self,test_data,test_label):
+        from sklearn import metrics
+        predict_label = self.model.predict(test_data)
+       
+        print(
+            "Accuracy : %.4g" % metrics.accuracy_score(test_label,predict_label)
+        )
+        
+    def save_model(self,path: str):
+        pass
+    def load_model(self,path: str):
         pass
 
-# training process
-model = Model.train(
-    train_data,
-    train_label)
+    def __str__(self):
+        return ' Name : {}, Age : {}, Gender : {} '.format(
+            self.mode,self.data,self.label)
 
-# predict process
-result = Model.predict(
-    test_data,
-    test_label)
+xgb_model = Model(
+    mode = 'xgboost',
+    data = df_train_data.values,
+    label= df_train_label.values)
+
+xgb_model.train()
+
+xgb_model.predict(
+    test_data  = df_test_data.as_matrix(),
+    test_label = df_test_label.as_matrix())
 
 
 
