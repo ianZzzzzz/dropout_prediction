@@ -14,5 +14,5 @@
     For the complex code code of the paper, please find the project'mooc_predict' under this account,
     Part of the connection script and details have been removed from the engineering code. If you need to communicate, please contact WeChat via email.
     Email: zhengyh186@gmail.com
-    WeChat ID: ZMNGYWPY
+    WeChat ID:  ZMNGYWPY
 
